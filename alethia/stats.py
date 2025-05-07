@@ -49,12 +49,21 @@ def do_umap(X, n_components=2, random_state=42):
     X_umap = reducer.fit_transform(X)
     return X_umap
 
+
 def plot_embedding(
-    X, labels=None, dims=[1, 2], color_map="Set1", title="", explained_var=None,
-    label=False, repel=False, text_size=8, point_size=40
+    X,
+    labels=None,
+    dims=[1, 2],
+    color_map="Set1",
+    title="",
+    explained_var=None,
+    label=False,
+    repel=False,
+    text_size=8,
+    point_size=40,
 ):
     """Plots embeddings in a 2D scatter plot with optional text labels that can be repelled.
-    
+
     Args:
         X (np.ndarray or pd.DataFrame): The embedding data. Can be a NumPy array or a Pandas DataFrame.
                                         If a NumPy array, it should be 2D. If a DataFrame, x_col and y_col
@@ -69,7 +78,7 @@ def plot_embedding(
         repel (bool, optional): Whether to repel text labels to avoid overlap. Requires label=True. Defaults to False.
         text_size (int, optional): Font size for text labels. Defaults to 8.
         point_size (int, optional): Size of scatter points. Defaults to 40.
-        
+
     Raises:
         TypeError: If input `X` is neither a NumPy array nor a Pandas DataFrame.
         ValueError: If `explained_var` is provided but not a list or of incorrect length.
@@ -79,7 +88,7 @@ def plot_embedding(
     import seaborn as sns
     import matplotlib.pyplot as plt
     import pandas as pd
-    
+
     if isinstance(X, np.ndarray):
         df = pd.DataFrame(X).astype(float)
         df.columns = [f"x{i}" for i in range(1, df.shape[1] + 1)]
@@ -91,8 +100,7 @@ def plot_embedding(
             df["labels"] = labels
     else:
         raise TypeError("X must be a NumPy array or a Pandas DataFrame.")
-    
-    
+
     scatter = sns.scatterplot(
         data=df,
         x=f"x{dims[0]}",
@@ -102,7 +110,7 @@ def plot_embedding(
         s=point_size,
         alpha=1,
     )
-    
+
     if label:
         if isinstance(labels, str) and labels in df.columns:
             texts = df[labels].astype(str).tolist()
@@ -110,47 +118,49 @@ def plot_embedding(
             texts = [str(label) for label in labels]
         else:
             texts = [str(i) for i in range(len(df))]
-        
+
         x_coords = df[f"x{dims[0]}"].values
         y_coords = df[f"x{dims[1]}"].values
-        
+
         if repel:
             try:
                 from adjustText import adjust_text
-                
+
                 text_objects = []
                 for i, txt in enumerate(texts):
-                    text_objects.append(plt.text(x_coords[i], y_coords[i], txt, fontsize=text_size))
-                
+                    text_objects.append(
+                        plt.text(x_coords[i], y_coords[i], txt, fontsize=text_size)
+                    )
+
                 adjust_text(
                     text_objects,
-                    arrowprops=dict(arrowstyle='->', color='black', lw=0.5),
+                    arrowprops=dict(arrowstyle="->", color="black", lw=0.5),
                     expand_points=(1.5, 1.5),
-                    force_points=(0.1, 0.1)
+                    force_points=(0.1, 0.1),
                 )
             except ImportError:
                 print("Warning: The 'adjustText' library is required for repel=True.")
                 print("Install it using: pip install adjustText")
-                
+
                 # Fall back to regular text labels without repelling
                 for i, txt in enumerate(texts):
                     plt.text(x_coords[i], y_coords[i], txt, fontsize=text_size)
         else:
             for i, txt in enumerate(texts):
                 plt.text(x_coords[i], y_coords[i], txt, fontsize=text_size)
-    
+
     plt.title(title)
-    
+
     # Add explained variance info if provided
     if explained_var is not None:
         if not isinstance(explained_var, (list, np.ndarray)) or len(explained_var) < 2:
             raise ValueError("explained_var must be a list with at least two values.")
         plt.xlabel(f"PC{dims[0]} ({explained_var[dims[0]-1]:.2f}%)")
         plt.ylabel(f"PC{dims[1]} ({explained_var[dims[1]-1]:.2f}%)")
-    
+
     # Add legend if labels provided
     if labels is not None:
         plt.legend(loc="best", bbox_to_anchor=(1.05, 1), borderaxespad=0.0)
-    
+
     plt.tight_layout()
     plt.show()
