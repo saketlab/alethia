@@ -8,6 +8,10 @@ import time
 import requests
 import sys
 import torch
+import numpy as np
+from tqdm import tqdm
+from typing import Union, List, Dict, Any, Optional
+from sentence_transformers import SentenceTransformer
 
 def load_sentence_transformer(model_name, force_cpu=False):
     """
@@ -135,40 +139,109 @@ def run_st(
         st_model = model_input
 
 
-def get_embedding(
-    input_list: list,
-    st_model: SentenceTransformer,
-    return_labels=False,
-    show_progress=False,
-) -> np.ndarray:
-    """
-    Generate embeddings for a list of input strings using a SentenceTransformer model.
 
+def get_embeddings(
+    texts: Union[str, List[str]],
+    model_type: str = "sentence-transformer",
+    model: Optional[Union[str, SentenceTransformer]] = None,
+    client: Optional[Any] = None,
+    api_key: Optional[str] = None,
+    return_labels: bool = False,
+    show_progress: bool = False,
+) -> Union[List[float], np.ndarray, Dict[str, List[float]]]:
+    """
+    Get embeddings for text(s) using various embedding models.
+    
     Args:
-        input_list (list): List of strings to embed.
-        st_model (SentenceTransformer): The SentenceTransformer model to use.
-        return_labels (bool, optional): Whether to return labels alongside embeddings. Defaults to False.
-        show_progress_bar (bool, optional): Whether to display a progress bar. Defaults to False.
-
+        texts: Single text string or list of text strings to embed
+        model_type: Type of model to use ('openai', 'google', or 'sentence-transformer')
+        model: Model name (for OpenAI and Google) or SentenceTransformer object
+        client: OpenAI client object (only for OpenAI)
+        api_key: API key (only needed for OpenAI if client not provided)
+        return_labels: Whether to return labels alongside embeddings (only for sentence-transformer)
+        show_progress: Whether to display a progress bar (only for sentence-transformer)
+    
     Returns:
-        np.ndarray: A NumPy array of embeddings, where each row corresponds to an input string.
-                      If return_labels is True, the last column will contain the labels.
+        - For OpenAI: List of floats representing the embedding
+        - For Google: A dictionary mapping each input text to its embedding
+        - For SentenceTransformer: NumPy array of embeddings, with optional labels
+    
+    Raises:
+        ValueError: If required parameters are missing or invalid
     """
-    if show_progress:
-        embeddings = np.stack(
-            [
-                st_model.encode(entity)
-                for entity in tqdm(input_list, desc="Generating Embeddings")
-            ]
-        )
+    # Validate and prepare inputs
+    if isinstance(texts, str):
+        texts_list = [texts]
     else:
-        embeddings = np.stack([st_model.encode(entity) for entity in input_list])
+        texts_list = texts
+    
+    is_single_input = isinstance(texts, str)
+    
+    # Generate embeddings based on model type
+    if model_type.lower() == "openai":
+        # OpenAI embeddings
+        from openai import OpenAI
 
-    if return_labels:
-        labels_array = np.array(input_list).reshape(-1, 1)
-        embeddings = np.hstack([embeddings, labels_array])
-    return embeddings
-
+        if client is None and api_key is None:
+            raise ValueError("Either client or api_key must be provided for OpenAI embeddings")
+        
+        if client is None:
+            client = OpenAI(api_key=api_key)
+        
+        model_name = model or "text-embedding-ada-002"
+        
+        # For a single text, return the embedding directly
+        if is_single_input:
+            response = client.embeddings.create(input=texts_list, model=model_name)
+            return response.data[0].embedding
+        else:
+            # For multiple texts, return a list of embeddings
+            response = client.embeddings.create(input=texts_list, model=model_name)
+            return [item.embedding for item in response.data]
+    
+    elif model_type.lower() == "google":
+        # Google's Generative AI embeddings
+        import genai  # Google's generative AI library
+        if model is None:
+            raise ValueError("Model name must be provided for Google embeddings")
+        
+        # For a single text, return the embedding directly
+        if is_single_input:
+            return genai.embed_content(model=model, content=texts)["embedding"]
+        else:
+            # For multiple texts, return a dictionary mapping each text to its embedding
+            return {text: genai.embed_content(model=model, content=text)["embedding"] 
+                    for text in texts_list}
+    
+    elif model_type.lower() == "sentence-transformer":
+        # SentenceTransformer embeddings
+        if model is None:
+            raise ValueError("SentenceTransformer model object must be provided")
+        
+        if not isinstance(model, SentenceTransformer):
+            raise ValueError("For sentence-transformer type, model must be a SentenceTransformer object")
+        
+        # Generate embeddings with or without progress bar
+        if show_progress:
+            embeddings = np.stack(
+                [model.encode(text) for text in tqdm(texts_list, desc="Generating Embeddings")]
+            )
+        else:
+            embeddings = np.stack([model.encode(text) for text in texts_list])
+        
+        # Add labels if requested
+        if return_labels:
+            labels_array = np.array(texts_list).reshape(-1, 1)
+            embeddings = np.hstack([embeddings, labels_array])
+        
+        # For a single text, return the embedding directly (but keep as numpy array)
+        if is_single_input and not return_labels:
+            return embeddings[0]
+        else:
+            return embeddings
+    
+    else:
+        raise ValueError("model_type must be one of: 'openai', 'google', or 'sentence-transformer'")
 
 def run_st(
     incorrect_entries: List[str],
@@ -345,7 +418,6 @@ def run_openai(incorrect_entries: list, reference_entries: list) -> pd.DataFrame
     results = []
 
     for incorrect in incorrect_entries:
-        # Get embedding for the query
         query_embedding = get_embedding(client, incorrect, model=model_name)
 
         # Compute similarities
@@ -366,7 +438,6 @@ def run_openai(incorrect_entries: list, reference_entries: list) -> pd.DataFrame
     return results_df
 
 
-# Write numpy style documentation for the method below
 def alethia(
     incorrect_entries: list,
     reference_entries: list,
@@ -415,3 +486,9 @@ def alethia(
             raise ValueError(
                 f"Model {model} not found in Hugging Face or not supported."
             )
+def benchmark_models(models_list: list, reference_values: list):
+    embeddings = []
+    for model in models_list:
+        get_embedding
+        
+    
