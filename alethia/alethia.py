@@ -14,7 +14,7 @@ from typing import Union, List, Dict, Any, Optional
 from sentence_transformers import SentenceTransformer
 
 
-def load_sentence_transformer(model_name, force_cpu=False):
+def load_sentence_transformer(model_name, force_cpu=False, **kwargs):
     """
     Load a sentence transformer model with error handling for CUDA out of memory errors.
 
@@ -30,11 +30,11 @@ def load_sentence_transformer(model_name, force_cpu=False):
             print(f"Loading model {model_name} on CPU (forced)")
             device = torch.device("cpu")
             st_model = SentenceTransformer(
-                model_name, device=device, trust_remote_code=True
+                model_name, device=device, trust_remote_code=True, **kwargs
             )
         else:
             print(f"Loading model {model_name}")
-            st_model = SentenceTransformer(model_name, trust_remote_code=True)
+            st_model = SentenceTransformer(model_name, trust_remote_code=True, **kwargs)
 
         print(f"Successfully loaded model: {model_name}")
         return st_model
@@ -49,7 +49,7 @@ def load_sentence_transformer(model_name, force_cpu=False):
                 # Attempt to load on CPU
                 device = torch.device("cpu")
                 st_model = SentenceTransformer(
-                    model_name, device=device, trust_remote_code=True
+                    model_name, device=device, trust_remote_code=True, **kwargs
                 )
                 print(f"Successfully loaded model {model_name} on CPU", file=sys.stderr)
                 return st_model

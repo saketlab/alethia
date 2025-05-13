@@ -96,6 +96,7 @@ def plot_embedding(
             df["labels"] = labels
     elif isinstance(X, pd.DataFrame):
         df = X.copy()  # Avoid modifying the original DataFrame
+        df.columns = [f"x{i}" for i in range(1, df.shape[1] + 1)]
         if labels is not None and isinstance(labels, list):
             df["labels"] = labels
     else:
