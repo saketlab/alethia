@@ -1,6 +1,10 @@
 =======
 alethia
 =======
+.. image:: docs/logo.png
+   :alt: Logo
+   :width: 200px
+   :align: center
 
 A Python package for entity matching, standardization, and visualization using embeddings from large language models.
 
