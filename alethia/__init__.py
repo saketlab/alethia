@@ -10,3 +10,5 @@ from .alethia import get_embeddings
 from .stats import do_pca
 from .stats import do_umap
 from .stats import plot_embedding
+
+from .utils import setup_matplotlib

@@ -3,6 +3,21 @@ import psutil
 import torch
 
 
+def setup_matplotlib():
+    import matplotlib.pyplot as plt
+
+    plt.rcParams["figure.dpi"] = 300
+    plt.rcParams["savefig.dpi"] = 300
+    plt.rcParams["font.family"] = "sans-serif"
+    plt.rcParams["font.sans-serif"] = ["Arial"]
+    plt.rcParams["axes.labelweight"] = "normal"
+
+    plt.rcParams["mathtext.fontset"] = "custom"
+    plt.rcParams["mathtext.rm"] = "Arial"
+    plt.rcParams["mathtext.it"] = "Arial:italic"
+    plt.rcParams["mathtext.bf"] = "Arial:bold"
+
+
 def get_system_usage() -> Dict[str, float]:
     """
     Get current system resource usage.
