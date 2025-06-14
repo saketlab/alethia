@@ -684,6 +684,135 @@ import numpy as np
 import pandas as pd
 
 
+def _find_exact_matches(
+    dirty_entries: List[str],
+    reference_entries: List[str],
+    case_sensitive: bool = False,
+    verbose: bool = False,
+) -> tuple:
+    """
+    Find exact matches between dirty entries and reference entries
+
+    Args:
+        dirty_entries: List of entries to match
+        reference_entries: List of reference entries
+        case_sensitive: Whether to perform case-sensitive matching
+        verbose: Whether to log matching info
+
+    Returns:
+        tuple: (exact_matches_dict, remaining_dirty_entries, remaining_indices)
+    """
+    exact_matches = {}
+    remaining_dirty_entries = []
+    remaining_indices = []
+
+    # Create lookup set for fast matching
+    if case_sensitive:
+        reference_set = set(reference_entries)
+    else:
+        reference_lookup = {
+            ref.lower(): ref for ref in reference_entries if isinstance(ref, str)
+        }
+
+    for i, dirty_entry in enumerate(dirty_entries):
+        if _is_nan_entry(dirty_entry):
+            # Keep NaN entries for later processing
+            remaining_dirty_entries.append(dirty_entry)
+            remaining_indices.append(i)
+            continue
+
+        found_exact_match = False
+
+        if case_sensitive:
+            if dirty_entry in reference_set:
+                exact_matches[i] = {
+                    "given_entity": dirty_entry,
+                    "alethia_prediction": dirty_entry,
+                    "alethia_score": 1.0,
+                }
+                found_exact_match = True
+        else:
+            # Case-insensitive matching
+            if isinstance(dirty_entry, str):
+                dirty_lower = dirty_entry.lower()
+                if dirty_lower in reference_lookup:
+                    exact_matches[i] = {
+                        "given_entity": dirty_entry,
+                        "alethia_prediction": reference_lookup[dirty_lower],
+                        "alethia_score": 1.0,
+                    }
+                    found_exact_match = True
+
+        if not found_exact_match:
+            remaining_dirty_entries.append(dirty_entry)
+            remaining_indices.append(i)
+
+    if verbose:
+        exact_count = len(exact_matches)
+        remaining_count = len(remaining_dirty_entries)
+        total_count = len(dirty_entries)
+        logger.info(
+            f"Exact matches: {exact_count} found, {remaining_count} remaining out of {total_count} total"
+        )
+
+    return exact_matches, remaining_dirty_entries, remaining_indices
+
+
+def _merge_exact_and_model_results(
+    exact_matches: Dict[int, Dict[str, Any]],
+    model_results: pd.DataFrame,
+    remaining_indices: List[int],
+    original_entries: List[str],
+    verbose: bool = False,
+) -> pd.DataFrame:
+    """
+    Merge exact match results with model-based results
+
+    Args:
+        exact_matches: Dictionary of exact matches by original index
+        model_results: Results from model-based matching
+        remaining_indices: Indices of entries that went through model matching
+        original_entries: Original input entries
+        verbose: Whether to log merging info
+
+    Returns:
+        pd.DataFrame: Combined results in original order
+    """
+    final_results = []
+    model_idx = 0
+
+    for i, original_entry in enumerate(original_entries):
+        if i in exact_matches:
+            # Use exact match result
+            final_results.append(exact_matches[i])
+        else:
+            # Use model result
+            if model_idx < len(model_results):
+                result_row = model_results.iloc[model_idx].to_dict()
+                result_row["given_entity"] = original_entry
+                final_results.append(result_row)
+                model_idx += 1
+            else:
+                # Fallback (shouldn't happen in normal operation)
+                final_results.append(
+                    {
+                        "given_entity": original_entry,
+                        "alethia_prediction": original_entry,
+                        "alethia_score": 1.0,
+                    }
+                )
+
+    if verbose:
+        exact_count = len(exact_matches)
+        model_count = len(model_results)
+        total_count = len(final_results)
+        logger.info(
+            f"Merged results: {exact_count} exact matches + {model_count} model matches = {total_count} total"
+        )
+
+    return pd.DataFrame(final_results)
+
+
 def alethia(
     dirty_entries: List[str],
     reference_entries: List[str],
@@ -693,10 +822,15 @@ def alethia(
     use_batch_optimization: bool = True,
     threshold: float = 0.7,
     verbose: bool = False,
+    use_exact_matching: bool = True,
+    exact_match_case_sensitive: bool = False,
+    return_model_attrs: bool = True,
+    drop_duplicates: bool = True,
+    remove_identical_hits: bool = False,
     **kwargs,
 ) -> pd.DataFrame:
     """
-    Main Alethia function with optimizations and NaN handling
+    Main Alethia function with exact match pre-filtering and optimizations
 
     Args:
         dirty_entries: List of incorrect entries
@@ -707,10 +841,12 @@ def alethia(
         use_batch_optimization: Use batch optimization
         threshold: Similarity threshold
         verbose: Enable verbose logging and progress bars
+        use_exact_matching: Enable exact match pre-filtering
+        exact_match_case_sensitive: Whether exact matching should be case-sensitive
         **kwargs: Additional arguments (model_name for API backends)
 
     Returns:
-        DataFrame with results, preserving NaN entries
+        DataFrame with results, preserving NaN entries and including exact matches
     """
     old_verbose = _VERBOSE_MODE
     if verbose:
@@ -719,12 +855,17 @@ def alethia(
     try:
         if verbose or _VERBOSE_MODE:
             logger.info(f"Running Alethia with model: {model}, backend: {backend}")
+            if use_exact_matching:
+                logger.info(
+                    f"Exact matching enabled (case_sensitive={exact_match_case_sensitive})"
+                )
 
         start_time = time.time()
         if verbose or _VERBOSE_MODE:
             print("Initial resource usage:")
             print_resource_usage()
 
+        # Handle NaN entries first
         processed_entries, nan_mask, original_indices = _preprocess_entries_with_nans(
             dirty_entries, verbose or _VERBOSE_MODE
         )
@@ -743,19 +884,74 @@ def alethia(
                 logger.warning("All reference entries are NaN, cannot perform matching")
             return _create_no_match_results(dirty_entries)
 
+        # EXACT MATCHING PHASE
+        exact_matches = {}
+        remaining_for_model = processed_entries
+        remaining_indices_for_model = list(range(len(processed_entries)))
+
+        if use_exact_matching:
+            exact_matches, remaining_for_model, remaining_indices_for_model = (
+                _find_exact_matches(
+                    processed_entries,
+                    clean_reference_entries,
+                    case_sensitive=exact_match_case_sensitive,
+                    verbose=verbose or _VERBOSE_MODE,
+                )
+            )
+
+            # Map exact matches back to original indices
+            original_exact_matches = {}
+            for proc_idx, match_result in exact_matches.items():
+                original_idx = original_indices[proc_idx]
+                original_exact_matches[original_idx] = match_result
+            exact_matches = original_exact_matches
+
+        # If all entries were exact matches, return early
+        if len(remaining_for_model) == 0:
+            if verbose or _VERBOSE_MODE:
+                logger.info(
+                    "All valid entries were exact matches, no model processing needed"
+                )
+
+            final_results = _reconstruct_results_with_exact_matches(
+                exact_matches, dirty_entries, nan_mask, verbose or _VERBOSE_MODE
+            )
+
+            processing_time = time.time() - start_time
+            final_results.attrs.update(
+                {
+                    "acceleration": "Exact-only",
+                    "backend": "exact",
+                    "processing_time": processing_time,
+                    "model": "exact",
+                    "nan_entries_count": sum(nan_mask),
+                    "exact_matches_count": len(exact_matches),
+                    "processed_entries_count": 0,
+                }
+            )
+
+            final_results["alethia_method"] = "exact"
+            return final_results
+
+        # MODEL-BASED MATCHING PHASE (for remaining entries)
+        if verbose or _VERBOSE_MODE:
+            logger.info(
+                f"Processing {len(remaining_for_model)} entries through model matching"
+            )
+
         if model == "rapidfuzz" or backend == "rapidfuzz":
-            processed_results = run_rapidfuzz_matching(
-                processed_entries, clean_reference_entries
+            model_results = run_rapidfuzz_matching(
+                remaining_for_model, clean_reference_entries
             )
         elif model == "openai" or backend == "openai":
             model_name = kwargs.get("model_name", "text-embedding-ada-002")
-            processed_results = run_openai_matching(
-                processed_entries, clean_reference_entries, model_name, threshold
+            model_results = run_openai_matching(
+                remaining_for_model, clean_reference_entries, model_name, threshold
             )
         elif model == "gemini" or backend == "gemini":
             model_name = kwargs.get("model_name", "models/embedding-001")
-            processed_results = run_gemini_matching(
-                processed_entries, clean_reference_entries, model_name, threshold
+            model_results = run_gemini_matching(
+                remaining_for_model, clean_reference_entries, model_name, threshold
             )
         else:
             if backend == "auto":
@@ -783,14 +979,14 @@ def alethia(
                 if backend != "rapidfuzz" and RAPIDFUZZ_AVAILABLE:
                     if verbose or _VERBOSE_MODE:
                         logger.info("Falling back to RapidFuzz")
-                    processed_results = run_rapidfuzz_matching(
-                        processed_entries, clean_reference_entries
+                    model_results = run_rapidfuzz_matching(
+                        remaining_for_model, clean_reference_entries
                     )
                 elif backend != "openai" and OPENAI_AVAILABLE:
                     if verbose or _VERBOSE_MODE:
                         logger.info("Falling back to OpenAI")
-                    processed_results = run_openai_matching(
-                        processed_entries,
+                    model_results = run_openai_matching(
+                        remaining_for_model,
                         clean_reference_entries,
                         "text-embedding-ada-002",
                         threshold,
@@ -798,8 +994,8 @@ def alethia(
                 elif backend != "gemini" and GEMINI_AVAILABLE:
                     if verbose or _VERBOSE_MODE:
                         logger.info("Falling back to Gemini")
-                    processed_results = run_gemini_matching(
-                        processed_entries,
+                    model_results = run_gemini_matching(
+                        remaining_for_model,
                         clean_reference_entries,
                         "models/embedding-001",
                         threshold,
@@ -808,9 +1004,9 @@ def alethia(
                     raise
 
             try:
-                if use_batch_optimization and len(processed_entries) > 10:
+                if use_batch_optimization and len(remaining_for_model) > 10:
                     results = optimized_batch_matching(
-                        processed_entries,
+                        remaining_for_model,
                         clean_reference_entries,
                         model_obj,
                         backend,
@@ -821,7 +1017,7 @@ def alethia(
                         acceleration += "+Numba"
                 else:
                     results = standard_matching(
-                        processed_entries,
+                        remaining_for_model,
                         clean_reference_entries,
                         model_obj,
                         backend,
@@ -829,21 +1025,21 @@ def alethia(
                     )
                     acceleration = "Standard"
 
-                processed_results = pd.DataFrame(results)
+                model_results = pd.DataFrame(results)
 
             except Exception as e:
                 logger.error(f"Processing failed: {e}")
                 if backend != "rapidfuzz" and RAPIDFUZZ_AVAILABLE:
                     if verbose or _VERBOSE_MODE:
                         logger.info("Falling back to RapidFuzz")
-                    processed_results = run_rapidfuzz_matching(
-                        processed_entries, clean_reference_entries
+                    model_results = run_rapidfuzz_matching(
+                        remaining_for_model, clean_reference_entries
                     )
                 elif backend != "openai" and OPENAI_AVAILABLE:
                     if verbose or _VERBOSE_MODE:
                         logger.info("Falling back to OpenAI")
-                    processed_results = run_openai_matching(
-                        processed_entries,
+                    model_results = run_openai_matching(
+                        remaining_for_model,
                         clean_reference_entries,
                         "text-embedding-ada-002",
                         threshold,
@@ -851,8 +1047,8 @@ def alethia(
                 elif backend != "gemini" and GEMINI_AVAILABLE:
                     if verbose or _VERBOSE_MODE:
                         logger.info("Falling back to Gemini")
-                    processed_results = run_gemini_matching(
-                        processed_entries,
+                    model_results = run_gemini_matching(
+                        remaining_for_model,
                         clean_reference_entries,
                         "models/embedding-001",
                         threshold,
@@ -860,11 +1056,14 @@ def alethia(
                 else:
                     raise
 
-        final_results = _reconstruct_results_with_nans(
-            processed_results,
+        # MERGE EXACT MATCHES WITH MODEL RESULTS
+        final_results = _reconstruct_results_with_exact_and_model_matches(
+            exact_matches,
+            model_results,
+            remaining_indices_for_model,
+            original_indices,
             dirty_entries,
             nan_mask,
-            original_indices,
             verbose or _VERBOSE_MODE,
         )
 
@@ -878,7 +1077,8 @@ def alethia(
                 "processing_time": processing_time,
                 "model": model,
                 "nan_entries_count": sum(nan_mask),
-                "processed_entries_count": len(processed_entries),
+                "exact_matches_count": len(exact_matches),
+                "processed_entries_count": len(remaining_for_model),
             }
         )
 
@@ -891,12 +1091,138 @@ def alethia(
             )
             if sum(nan_mask) > 0:
                 logger.info(f"Preserved {sum(nan_mask)} NaN entries in results")
-        final_results["alethia_mdethod"] = model
+            if len(exact_matches) > 0:
+                logger.info(f"Found {len(exact_matches)} exact matches (score=1.0)")
+        if return_model_attrs:
+            final_results["alethia_method"] = model
+            final_results["alethia_backend"] = backend
+        if remove_identical_hits:
+            final_results = final_results[
+                final_results.given_entity != final_results.alethia_prediction
+            ]
+        if drop_duplicates:
+            final_results = final_results.drop_duplicates()
         return final_results
 
     finally:
         if not old_verbose:
             set_verbose(False)
+
+
+def _reconstruct_results_with_exact_matches(
+    exact_matches: Dict[int, Dict[str, Any]],
+    original_entries: List[str],
+    nan_mask: List[bool],
+    verbose: bool = False,
+) -> pd.DataFrame:
+    """
+    Reconstruct results when only exact matches were found
+
+    Args:
+        exact_matches: Dictionary of exact matches by original index
+        original_entries: Original input entries
+        nan_mask: Boolean mask indicating which entries were NaN
+        verbose: Whether to log reconstruction info
+
+    Returns:
+        pd.DataFrame: Results with exact matches and NaN entries
+    """
+    full_results = []
+
+    for i, entry in enumerate(original_entries):
+        if nan_mask[i]:
+            full_results.append(
+                {
+                    "given_entity": entry,
+                    "alethia_prediction": np.nan,
+                    "alethia_score": np.nan,
+                }
+            )
+        elif i in exact_matches:
+            full_results.append(exact_matches[i])
+        else:
+            # This shouldn't happen if exact matching is working correctly
+            full_results.append(
+                {
+                    "given_entity": entry,
+                    "alethia_prediction": entry,
+                    "alethia_score": 1.0,
+                }
+            )
+
+    if verbose:
+        logger.info(f"Reconstructed {len(full_results)} results (exact matches only)")
+
+    return pd.DataFrame(full_results)
+
+
+def _reconstruct_results_with_exact_and_model_matches(
+    exact_matches: Dict[int, Dict[str, Any]],
+    model_results: pd.DataFrame,
+    remaining_indices_for_model: List[int],
+    original_indices: List[int],
+    original_entries: List[str],
+    nan_mask: List[bool],
+    verbose: bool = False,
+) -> pd.DataFrame:
+    """
+    Reconstruct full results combining exact matches, model results, and NaN entries
+
+    Args:
+        exact_matches: Dictionary of exact matches by original index
+        model_results: Results from model-based matching
+        remaining_indices_for_model: Indices within processed entries that went to model
+        original_indices: Mapping from processed to original indices
+        original_entries: Original input entries
+        nan_mask: Boolean mask indicating which entries were NaN
+        verbose: Whether to log reconstruction info
+
+    Returns:
+        pd.DataFrame: Complete results with all matches preserved
+    """
+    full_results = []
+    model_idx = 0
+
+    for i, entry in enumerate(original_entries):
+        if nan_mask[i]:
+            # NaN entry
+            full_results.append(
+                {
+                    "given_entity": entry,
+                    "alethia_prediction": np.nan,
+                    "alethia_score": np.nan,
+                }
+            )
+        elif i in exact_matches:
+            # Exact match
+            full_results.append(exact_matches[i])
+        else:
+            # Model-based match
+            if model_idx < len(model_results):
+                result_row = model_results.iloc[model_idx].to_dict()
+                result_row["given_entity"] = entry
+                full_results.append(result_row)
+                model_idx += 1
+            else:
+                # Fallback
+                full_results.append(
+                    {
+                        "given_entity": entry,
+                        "alethia_prediction": entry,
+                        "alethia_score": 1.0,
+                    }
+                )
+
+    if verbose:
+        exact_count = len(exact_matches)
+        model_count = len(model_results)
+        nan_count = sum(nan_mask)
+        total_count = len(full_results)
+        logger.info(
+            f"Reconstructed {total_count} results: {exact_count} exact + {model_count} model + {nan_count} NaN"
+        )
+
+    return pd.DataFrame(full_results)
 
 
 def _is_nan_entry(entry) -> bool:
@@ -1334,7 +1660,17 @@ def get_available_models(
 
             if include_details:
                 fastembed_df = pd.DataFrame(supported_models_raw)
-                fastembed_df = fastembed_df.drop(columns=["sources", "tasks", "description", "license", "model_file", "additional_files"], errors='ignore')
+                fastembed_df = fastembed_df.drop(
+                    columns=[
+                        "sources",
+                        "tasks",
+                        "description",
+                        "license",
+                        "model_file",
+                        "additional_files",
+                    ],
+                    errors="ignore",
+                )
 
                 if sort_by == "size":
                     fastembed_df = fastembed_df.sort_values(

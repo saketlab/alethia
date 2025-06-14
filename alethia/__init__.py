@@ -11,8 +11,8 @@ from .alethia import (FAISS_AVAILABLE, FASTEMBED_AVAILABLE, NUMBA_AVAILABLE,
                       load_sentence_transformer_model)
 from .embeddings import get_embeddings
 from .models import (classify_embedding_models, create_recommendation_matrix,
-                     filter_huggingface_only,
-                     get_model_recommendation, load_mteb_dashboard_data,
+                     filter_huggingface_only, get_model_recommendation,
+                     load_mteb_dashboard_data,
                      print_model_classification_guide)
 from .stats import do_pca, do_umap, plot_embedding
 from .utils import setup_matplotlib

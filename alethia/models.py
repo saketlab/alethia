@@ -290,8 +290,6 @@ def create_recommendation_matrix() -> Dict[str, List[str]]:
     return recommendations
 
 
-
-
 def get_detailed_model_info() -> Dict[str, Dict[str, Any]]:
     """
     Get detailed information for each embedding model including organization, size, parameters, and characteristics.
@@ -320,7 +318,6 @@ def get_detailed_model_info() -> Dict[str, Dict[str, Any]]:
             "weaknesses": ["Larger than lightweight options"],
             "best_use_case": "General purpose, production applications",
         },
-        
         "dragonkue/snowflake-arctic-embed-l-v2.0-ko": {
             "organization": "dragonkue",
             "size_category": "large",
@@ -574,7 +571,6 @@ def get_detailed_model_info() -> Dict[str, Dict[str, Any]]:
     }
 
     return model_details
-    
 
 
 def print_model_classification_guide():
