@@ -424,8 +424,8 @@ def run_openai_matching(
             results.append(
                 {
                     "given_entity": incorrect,
-                    "alethia_prediction": incorrect,
-                    "alethia_score": 1.0,
+                    "alethia_prediction": pd.NA,
+                    "alethia_score": pd.NA,
                 }
             )
 
@@ -662,16 +662,27 @@ def run_rapidfuzz_matching(
         else dirty_entries
     )
     for incorrect in iterator:
-        best_match, score, _ = process.extractOne(
+        match_result = process.extractOne(
             incorrect, reference_entries, scorer=fuzz.token_sort_ratio
         )
-        results.append(
-            {
-                "given_entity": incorrect,
-                "alethia_prediction": best_match,
-                "alethia_score": score / 100,
-            }
-        )
+        if match_result is not None:
+            best_match, score, _ = match_result
+            results.append(
+                {
+                    "given_entity": incorrect,
+                    "alethia_prediction": best_match,
+                    "alethia_score": score / 100,
+                }
+            )
+        else:
+            # No matches found (empty reference list)
+            results.append(
+                {
+                    "given_entity": incorrect,
+                    "alethia_prediction": incorrect,
+                    "alethia_score": 1.0,
+                }
+            )
 
     return pd.DataFrame(results)
 
