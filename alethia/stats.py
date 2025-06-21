@@ -84,10 +84,10 @@ def plot_embedding(
         ValueError: If `explained_var` is provided but not a list or of incorrect length.
         ImportError: If repel=True but adjustText is not installed.
     """
-    import numpy as np
-    import seaborn as sns
     import matplotlib.pyplot as plt
+    import numpy as np
     import pandas as pd
+    import seaborn as sns
 
     if isinstance(X, np.ndarray):
         df = pd.DataFrame(X).astype(float)
