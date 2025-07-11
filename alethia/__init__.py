@@ -14,7 +14,7 @@ from .models import (classify_embedding_models, create_recommendation_matrix,
                      filter_huggingface_only, get_model_recommendation,
                      load_mteb_dashboard_data,
                      print_model_classification_guide)
-from .stats import do_pca, do_umap, plot_embedding
+from .stats import do_pca, do_umap, plot_embedding, plot_embedding_df
 from .utils import setup_matplotlib
 
 __all__ = [
@@ -43,6 +43,7 @@ __all__ = [
     "do_pca",
     "do_umap",
     "plot_embedding",
+    "plot_embedding_df",
     "setup_matplotlib",
     "print_resource_usage",
     # Configuration and debugging
