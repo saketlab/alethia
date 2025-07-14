@@ -26,8 +26,8 @@ def do_pca(X: np.array, n_components=2, labels=None, return_expl_var=True):
     X_pca = pca.fit_transform(X)
     explained_var = pca.explained_variance_ratio_ * 100
     if return_expl_var:
-        return X, explained_var
-    return X
+        return X_pca, explained_var
+    return X_pca
 
 
 def do_umap(X, n_components=2, random_state=42):
