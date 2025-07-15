@@ -165,3 +165,116 @@ def plot_embedding(
 
     plt.tight_layout()
     plt.show()
+
+
+def plot_embedding_df(
+    df,
+    x_col="x1",
+    y_col="x2",
+    label_by=None,
+    color_by=None,
+    color_map="Set1",
+    title="",
+    explained_var=None,
+    label=False,
+    repel=False,
+    text_size=8,
+    point_size=40,
+):
+    """Plots embeddings from a DataFrame with separate label and color options.
+
+    Args:
+        df (pd.DataFrame): DataFrame containing the embedding data and labels.
+        x_col (str, optional): Column name for x-axis. Defaults to "x1".
+        y_col (str, optional): Column name for y-axis. Defaults to "x2".
+        label_by (str, optional): Column name to use for text labels beside points. Defaults to None.
+        color_by (str, optional): Column name to use for coloring points. Defaults to None.
+        color_map (str, optional): Seaborn color map name. Defaults to "Set1".
+        title (str, optional): Plot title. Defaults to "".
+        explained_var (list, optional): Explained variance for each dimension, used for PCA plots. Defaults to None.
+        label (bool, optional): Whether to add text labels to the points. Defaults to False.
+        repel (bool, optional): Whether to repel text labels to avoid overlap. Requires label=True. Defaults to False.
+        text_size (int, optional): Font size for text labels. Defaults to 8.
+        point_size (int, optional): Size of scatter points. Defaults to 40.
+
+    Raises:
+        ValueError: If specified columns don't exist in the DataFrame.
+        ImportError: If repel=True but adjustText is not installed.
+    """
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import pandas as pd
+    import seaborn as sns
+
+    # Validate columns exist
+    if x_col not in df.columns:
+        raise ValueError(f"Column '{x_col}' not found in DataFrame")
+    if y_col not in df.columns:
+        raise ValueError(f"Column '{y_col}' not found in DataFrame")
+    if label_by is not None and label_by not in df.columns:
+        raise ValueError(f"Column '{label_by}' not found in DataFrame")
+    if color_by is not None and color_by not in df.columns:
+        raise ValueError(f"Column '{color_by}' not found in DataFrame")
+
+    # Create the scatter plot
+    scatter = sns.scatterplot(
+        data=df,
+        x=x_col,
+        y=y_col,
+        hue=color_by if color_by is not None else None,
+        palette=color_map if color_by is not None else None,
+        s=point_size,
+        alpha=1,
+    )
+
+    # Add text labels if requested
+    if label and label_by is not None:
+        texts = df[label_by].astype(str).tolist()
+        x_coords = df[x_col].values
+        y_coords = df[y_col].values
+
+        if repel:
+            try:
+                from adjustText import adjust_text
+
+                text_objects = []
+                for i, txt in enumerate(texts):
+                    text_objects.append(
+                        plt.text(x_coords[i], y_coords[i], txt, fontsize=text_size)
+                    )
+
+                adjust_text(
+                    text_objects,
+                    arrowprops=dict(arrowstyle="->", color="black", lw=0.5),
+                    expand_points=(1.5, 1.5),
+                    force_points=(0.1, 0.1),
+                )
+            except ImportError:
+                print("Warning: The 'adjustText' library is required for repel=True.")
+                print("Install it using: pip install adjustText")
+
+                # Fall back to regular text labels without repelling
+                for i, txt in enumerate(texts):
+                    plt.text(x_coords[i], y_coords[i], txt, fontsize=text_size)
+        else:
+            for i, txt in enumerate(texts):
+                plt.text(x_coords[i], y_coords[i], txt, fontsize=text_size)
+
+    plt.title(title)
+
+    # Add explained variance info if provided
+    if explained_var is not None:
+        if not isinstance(explained_var, (list, np.ndarray)) or len(explained_var) < 2:
+            raise ValueError("explained_var must be a list with at least two values.")
+        plt.xlabel(f"PC1 ({explained_var[0]:.2f}%)")
+        plt.ylabel(f"PC2 ({explained_var[1]:.2f}%)")
+    else:
+        plt.xlabel(x_col)
+        plt.ylabel(y_col)
+
+    # Add legend if color_by provided
+    if color_by is not None:
+        plt.legend(loc="best", bbox_to_anchor=(1.05, 1), borderaxespad=0.0)
+
+    plt.tight_layout()
+    plt.show()
