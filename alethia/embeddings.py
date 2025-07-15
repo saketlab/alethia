@@ -14,9 +14,12 @@ except ImportError:
     SentenceTransformer = None
 
 try:
-    import fastembed
+    import importlib.util
 
-    FASTEMBED_AVAILABLE = True
+    if importlib.util.find_spec("fastembed") is not None:
+        FASTEMBED_AVAILABLE = True
+    else:
+        FASTEMBED_AVAILABLE = False
 except ImportError:
     FASTEMBED_AVAILABLE = False
 
@@ -428,9 +431,9 @@ def example_batch_texts():
     ]
 
     # Calculate embeddings in batch
-    embeddings = calculate_embeddings_batch(
+    embeddings = get_embeddings(
         texts=texts,
-        model_name="all-MiniLM-L6-v2",
+        model="all-MiniLM-L6-v2",
         backend="auto",
         force_cpu=True,
         show_progress=True,
@@ -444,7 +447,7 @@ def example_batch_texts():
 if __name__ == "__main__":
     # Run examples
     print("=== Single Text Example ===")
-    example_single_text()
+    example_usage()
 
     print("\n=== Batch Texts Example ===")
     example_batch_texts()

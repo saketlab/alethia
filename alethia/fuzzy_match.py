@@ -3,11 +3,9 @@ fuzzy matching for alethia
 """
 
 import logging
-import sys
 import warnings
-from typing import Dict, List, Optional, Union
+from typing import Dict, List
 
-import numpy as np
 import pandas as pd
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -78,11 +76,13 @@ class FuzzyLibraryManager:
             warnings.warn(
                 "No fuzzy matching library available. Install rapidfuzz or fuzzywuzzy.",
                 ImportWarning,
+                stacklevel=2,
             )
         elif not self.rapidfuzz_available and self.fuzzywuzzy_available:
             warnings.warn(
                 "Using FuzzyWuzzy. Install rapidfuzz for better performance: pip install rapidfuzz",
                 UserWarning,
+                stacklevel=2,
             )
 
     def get_primary_library(self):
@@ -118,7 +118,7 @@ class FuzzyLibraryManager:
             logger.warning(
                 f"Algorithm {algorithm} not available in {lib_name}, using ratio"
             )
-            return getattr(lib["fuzz"], "ratio")
+            return lib["fuzz"].ratio
 
     def get_process_extract(self):
         """Get the process.extract function"""

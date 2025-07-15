@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Union
 
 import pandas as pd
 import psutil
@@ -70,10 +70,10 @@ def get_embeddings(
         # OpenAI embeddings
         try:
             from openai import OpenAI
-        except ImportError:
+        except ImportError as err:
             raise ImportError(
                 "OpenAI library is not installed. Install it with: pip install openai"
-            )
+            ) from err
 
         if client is None and api_key is None:
             raise ValueError(
@@ -98,10 +98,10 @@ def get_embeddings(
         # Google's Generative AI embeddings
         try:
             import genai  # Google's generative AI library
-        except ImportError:
+        except ImportError as err:
             raise ImportError(
                 "Google GenerativeAI library is not installed. Install it with: pip install google-generativeai"
-            )
+            ) from err
 
         if model is None:
             raise ValueError("Model name must be provided for Google embeddings")
@@ -162,10 +162,10 @@ def get_embeddings(
 def setup_matplotlib():
     try:
         import matplotlib.pyplot as plt
-    except ImportError:
+    except ImportError as err:
         raise ImportError(
             "Matplotlib is not installed. Install it with: pip install matplotlib"
-        )
+        ) from err
 
     plt.rcParams["figure.dpi"] = 300
     plt.rcParams["savefig.dpi"] = 300

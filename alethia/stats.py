@@ -19,8 +19,6 @@ def do_pca(X: np.array, n_components=2, labels=None, return_expl_var=True):
                            returns only the transformed data.
     """
     from sklearn.decomposition import PCA
-    from sklearn.pipeline import Pipeline
-    from sklearn.preprocessing import StandardScaler
 
     pca = PCA(n_components=n_components)
     X_pca = pca.fit_transform(X)
@@ -53,7 +51,7 @@ def do_umap(X, n_components=2, random_state=42):
 def plot_embedding(
     X,
     labels=None,
-    dims=[1, 2],
+    dims=None,
     color_map="Set1",
     title="",
     explained_var=None,
@@ -102,7 +100,10 @@ def plot_embedding(
     else:
         raise TypeError("X must be a NumPy array or a Pandas DataFrame.")
 
-    scatter = sns.scatterplot(
+    if dims is None:
+        dims = [1, 2]
+
+    sns.scatterplot(
         data=df,
         x=f"x{dims[0]}",
         y=f"x{dims[1]}",
@@ -135,7 +136,7 @@ def plot_embedding(
 
                 adjust_text(
                     text_objects,
-                    arrowprops=dict(arrowstyle="->", color="black", lw=0.5),
+                    arrowprops={"arrowstyle": "->", "color": "black", "lw": 0.5},
                     expand_points=(1.5, 1.5),
                     force_points=(0.1, 0.1),
                 )
@@ -203,7 +204,6 @@ def plot_embedding_df(
     """
     import matplotlib.pyplot as plt
     import numpy as np
-    import pandas as pd
     import seaborn as sns
 
     # Validate columns exist
@@ -217,7 +217,7 @@ def plot_embedding_df(
         raise ValueError(f"Column '{color_by}' not found in DataFrame")
 
     # Create the scatter plot
-    scatter = sns.scatterplot(
+    sns.scatterplot(
         data=df,
         x=x_col,
         y=y_col,
@@ -245,7 +245,7 @@ def plot_embedding_df(
 
                 adjust_text(
                     text_objects,
-                    arrowprops=dict(arrowstyle="->", color="black", lw=0.5),
+                    arrowprops={"arrowstyle": "->", "color": "black", "lw": 0.5},
                     expand_points=(1.5, 1.5),
                     force_points=(0.1, 0.1),
                 )

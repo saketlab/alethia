@@ -1,15 +1,13 @@
 import logging
 import os
-import sys
 import time
-import warnings
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Union
 
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from .utils import convert_memory_to_gb, print_resource_usage
+from .utils import print_resource_usage
 
 logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -82,9 +80,10 @@ def check_optional_dependencies(verbose: bool = False):
         globals()["torch"] = None
 
     try:
-        import fastembed
+        import importlib.util
 
-        dependencies["FASTEMBED_AVAILABLE"] = True
+        if importlib.util.find_spec("fastembed") is not None:
+            dependencies["FASTEMBED_AVAILABLE"] = True
         if verbose or _VERBOSE_MODE:
             logger.info("✅ FastEmbed available")
     except ImportError:
@@ -104,9 +103,10 @@ def check_optional_dependencies(verbose: bool = False):
             logger.debug("❌ RapidFuzz not available")
 
     try:
-        import faiss
+        import importlib.util
 
-        dependencies["FAISS_AVAILABLE"] = True
+        if importlib.util.find_spec("faiss") is not None:
+            dependencies["FAISS_AVAILABLE"] = True
         if verbose or _VERBOSE_MODE:
             logger.info("✅ FAISS available")
     except ImportError:
@@ -205,6 +205,17 @@ def cosine_similarity(vec1: np.ndarray, vec2: np.ndarray) -> float:
     return np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2))
 
 
+# Check if jit is available, set by check_optional_dependencies
+jit = globals().get("jit")
+if jit is None:
+
+    def jit(nopython=True):
+        def decorator(func):
+            return func
+
+        return decorator
+
+
 @jit(nopython=True)
 def fast_cosine_similarity_matrix(A, B):
     """JIT-compiled cosine similarity matrix computation"""
@@ -226,6 +237,9 @@ def get_openai_embedding(client, text: str, model: str = "text-embedding-ada-002
 
 def get_gemini_embedding(text: str, model_name: str = "models/embedding-001"):
     """Get embedding from Gemini API"""
+    genai = globals().get("genai")
+    if genai is None:
+        raise ImportError("Gemini (Google GenerativeAI) not available")
     result = genai.embed_content(model=model_name, content=text)
     return result["embedding"]
 
@@ -277,7 +291,8 @@ def load_sentence_transformer_model(model_name: str, force_cpu: bool = False):
         )
 
     try:
-        if force_cpu or not torch.cuda.is_available():
+        torch = globals().get("torch")
+        if force_cpu or (torch is None) or not torch.cuda.is_available():
             device = "cpu"
             if _VERBOSE_MODE:
                 logger.info(f"Loading {model_name} on CPU")
@@ -286,6 +301,9 @@ def load_sentence_transformer_model(model_name: str, force_cpu: bool = False):
             if _VERBOSE_MODE:
                 logger.info(f"Loading {model_name} on GPU")
 
+        SentenceTransformer = globals().get("SentenceTransformer")
+        if SentenceTransformer is None:
+            raise ImportError("SentenceTransformers not available")
         model = SentenceTransformer(model_name, device=device, trust_remote_code=True)
         if _VERBOSE_MODE:
             logger.info(f"✅ Successfully loaded {model_name}")
@@ -295,6 +313,9 @@ def load_sentence_transformer_model(model_name: str, force_cpu: bool = False):
         if "CUDA out of memory" in str(e):
             logger.warning("GPU memory error, trying CPU")
             try:
+                SentenceTransformer = globals().get("SentenceTransformer")
+                if SentenceTransformer is None:
+                    raise ImportError("SentenceTransformers not available")
                 model = SentenceTransformer(
                     model_name, device="cpu", trust_remote_code=True
                 )
@@ -321,6 +342,9 @@ def setup_openai_client():
     if api_key is None:
         raise ValueError("OPENAI_API_KEY not set in environment variables.")
 
+    OpenAI = globals().get("OpenAI")
+    if OpenAI is None:
+        raise ImportError("OpenAI not available")
     return OpenAI(api_key=api_key)
 
 
@@ -335,6 +359,9 @@ def setup_gemini_client():
     if api_key is None:
         raise ValueError("GEMINI_API_KEY not set in environment variables.")
 
+    genai = globals().get("genai")
+    if genai is None:
+        raise ImportError("Gemini (Google GenerativeAI) not available")
     genai.configure(api_key=api_key)
     return genai
 
@@ -551,7 +578,7 @@ def optimized_batch_matching(
     best_scores = np.max(similarity_matrix, axis=1)
 
     results = []
-    for i, (entry, ref_idx, sim) in enumerate(
+    for _i, (entry, ref_idx, sim) in enumerate(
         zip(dirty_entries, best_indices, best_scores)
     ):
         if sim >= threshold:
@@ -662,6 +689,10 @@ def run_rapidfuzz_matching(
         else dirty_entries
     )
     for incorrect in iterator:
+        process = globals().get("process")
+        fuzz = globals().get("fuzz")
+        if process is None or fuzz is None:
+            raise ImportError("RapidFuzz not available")
         match_result = process.extractOne(
             incorrect, reference_entries, scorer=fuzz.token_sort_ratio
         )
@@ -685,14 +716,6 @@ def run_rapidfuzz_matching(
             )
 
     return pd.DataFrame(results)
-
-
-import logging
-import time
-from typing import Any, Dict, List
-
-import numpy as np
-import pandas as pd
 
 
 def _find_exact_matches(

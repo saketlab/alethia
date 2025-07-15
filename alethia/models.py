@@ -1,8 +1,6 @@
 import importlib.resources
-import os
 import re
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List
 
 import pandas as pd
 
@@ -606,7 +604,7 @@ def print_model_classification_guide():
         print(f"Avoid when: {info['recommendations']['avoid_when']}")
         print("-" * 50)
 
-    print(f"\n🎯 RECOMMENDATIONS BY USE CASE")
+    print("\n🎯 RECOMMENDATIONS BY USE CASE")
     print("=" * 40)
 
     use_case_descriptions = {

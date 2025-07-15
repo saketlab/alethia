@@ -185,6 +185,8 @@ packages = ["alethia", "alethia.data"]
 [tool.ruff]
 target-version = "py38"
 line-length = 88
+
+[tool.ruff.lint]
 select = [
     "E",  # pycodestyle errors
     "W",  # pycodestyle warnings
@@ -204,7 +206,7 @@ ignore = [
     "N806",  # variable in function should be lowercase (for API compatibility)
 ]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]  # Allow unused imports in __init__.py
 "**/test_*.py" = ["N802", "N803"]  # Allow uppercase in test functions
 
