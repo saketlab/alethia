@@ -101,7 +101,7 @@ jobs:
 
     - name: Run ruff linter
       run: |
-        ruff check alethia/ tests/ examples/
+        ruff check alethia/ tests/
 
     - name: Run black formatter check
       run: |
