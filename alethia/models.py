@@ -60,6 +60,8 @@ def load_mteb_dashboard_data() -> pd.DataFrame:
         with importlib.resources.path(
             "alethia.data", "mteb_dashboard.csv"
         ) as data_path:
+            if data_path is None:
+                raise FileNotFoundError("MTEB dashboard data file path is None - package data not properly installed")
             mteb_df = pd.read_csv(data_path)
 
         mteb_df = filter_huggingface_only(mteb_df)
