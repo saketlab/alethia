@@ -1525,8 +1525,11 @@ def get_available_models(
     Returns:
         Dict[str, Union[List[str], pd.DataFrame]]: Dictionary mapping backend names to available models
     """
-    from .models import (classify_embedding_models, get_detailed_model_info,
-                         load_mteb_dashboard_data)
+    from .models import (
+        classify_embedding_models,
+        get_detailed_model_info,
+        load_mteb_dashboard_data,
+    )
 
     available_models = {}
 
