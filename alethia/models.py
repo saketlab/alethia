@@ -1,8 +1,6 @@
 import importlib.resources
-import os
 import re
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List
 
 import pandas as pd
 
@@ -69,6 +67,23 @@ def load_mteb_dashboard_data() -> pd.DataFrame:
         def extract_model_name(model_str):
             if pd.isna(model_str):
                 return model_str
+
+            # First try to extract from the markdown link format [text](url)
+            match = re.search(r"\[(.*?)\]\((.*?)\)", str(model_str))
+            if match:
+                link_text = match.group(1)
+                url = match.group(2)
+
+                # Extract model name from HuggingFace URL if present
+                # URLs like https://huggingface.co/Qwen/Qwen3-Embedding-8B
+                hf_match = re.search(r"huggingface\.co/([^/?]+/[^/?]+)", url)
+                if hf_match:
+                    return hf_match.group(1)  # Returns "Qwen/Qwen3-Embedding-8B"
+
+                # Fallback to link text if no HuggingFace URL pattern
+                return link_text
+
+            # Fallback to original behavior for [text] format
             match = re.search(r"\[(.*?)\]", str(model_str))
             return match.group(1) if match else str(model_str)
 
@@ -606,7 +621,7 @@ def print_model_classification_guide():
         print(f"Avoid when: {info['recommendations']['avoid_when']}")
         print("-" * 50)
 
-    print(f"\n🎯 RECOMMENDATIONS BY USE CASE")
+    print("\n🎯 RECOMMENDATIONS BY USE CASE")
     print("=" * 40)
 
     use_case_descriptions = {
