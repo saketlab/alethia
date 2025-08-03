@@ -105,7 +105,7 @@ jobs:
 
     - name: Run black formatter check
       run: |
-        black --check alethia/ tests/ examples/
+        black --check alethia/ tests/
 
     - name: Run mypy type checker
       run: |

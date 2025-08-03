@@ -151,9 +151,9 @@ def check_optional_dependencies(verbose: bool = False):
         if verbose or _VERBOSE_MODE:
             logger.debug("✅ Gemini (Google GenerativeAI) available")
         globals()["genai"] = genai
-    except ImportError:
+    except (ImportError, SyntaxError) as e:
         if verbose or _VERBOSE_MODE:
-            logger.debug("❌ Gemini (Google GenerativeAI) not available")
+            logger.debug(f"❌ Gemini (Google GenerativeAI) not available: {e}")
         globals()["genai"] = None
 
     logger.setLevel(original_level)
