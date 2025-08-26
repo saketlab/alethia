@@ -2,6 +2,25 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import pandas as pd
 import psutil
+from pydantic import BaseModel
+import instructor
+import logging
+
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+logger = logging.getLogger(__name__)
+
+class FuzzyMatch(BaseModel):
+    given_entity: str
+    fuzzy_prediction: str
+    fuzzy_similarity: float  # 0-1 confidence
+
+prompt = """
+    You are a domain-aware fuzzy matcher.
+    Given the query term: "{query}"
+    Choose the best match from the following candidates:
+    {candidates}
+    Return JSON with keys: given_entity, fuzzy_prediction, fuzzy_similarity (0-1).
+"""
 
 # Gracefully handle optional imports
 try:
@@ -249,3 +268,38 @@ def print_resource_usage(prefix: str = ""):
                 print("No GPU detected, running on CPU only")
 
     return sys_usage, gpu_info
+
+
+def get_client(model_name: str = "ollama/gemma2:2b", api_key: str = None):
+        """Get Instructor client"""
+        try:
+            if model_name is None or model_name.strip() == "":
+                logger.warning("No model name provided for Instructor client")
+                return None
+             
+            client = instructor.from_provider(model_name, api_key=api_key)
+            return client
+        except Exception as e:
+            logger.error(f"Failed to create Instructor client: {e}")
+            return None
+
+def prompt_fuzzy_match(prompt_matcher: instructor.client.Instructor, query: str, candidates: List[str]):
+    """Perform prompt-based fuzzy match using Instructor LLM client"""
+    if not prompt_matcher:
+        logger.warning("Prompt matcher requested but not configured")
+        return None
+
+    try:
+        resp = prompt_matcher.chat.completions.create(
+            response_model=FuzzyMatch,
+            messages=[{"role": "user", "content": prompt.format(query=query, candidates=candidates)}],
+        )
+
+        return {
+            "text": resp.fuzzy_prediction,
+            "score": resp.fuzzy_similarity * 100.0,
+            "index": candidates.index(resp.fuzzy_prediction) if resp.fuzzy_prediction in candidates else -1
+        }
+    except Exception as e:
+        logger.error(f"Prompt-based match failed: {e}")
+        return None

@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from .utils import convert_memory_to_gb, print_resource_usage
+from .utils import convert_memory_to_gb, print_resource_usage, prompt_fuzzy_match, get_client
 
 logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -838,6 +838,7 @@ def alethia(
     return_model_attrs: bool = True,
     drop_duplicates: bool = True,
     remove_identical_hits: bool = False,
+    api_key: str = "",
     **kwargs,
 ) -> pd.DataFrame:
     """
@@ -846,14 +847,15 @@ def alethia(
     Args:
         dirty_entries: List of incorrect entries
         reference_entries: List of reference entries
-        model: Model name
-        backend: Backend to use ('auto', 'sentence-transformers', 'fastembed', 'rapidfuzz', 'openai', 'gemini')
+        model: Model name. 
+        backend: Backend to use ('auto', 'sentence-transformers', 'fastembed', 'rapidfuzz', 'openai', 'gemini', 'instructor')
         force_cpu: Force CPU usage
         use_batch_optimization: Use batch optimization
         threshold: Similarity threshold
         verbose: Enable verbose logging and progress bars
         use_exact_matching: Enable exact match pre-filtering
         exact_match_case_sensitive: Whether exact matching should be case-sensitive
+        api_key: API key for the instructor if required
         **kwargs: Additional arguments (model_name for API backends)
 
     Returns:
@@ -964,6 +966,27 @@ def alethia(
             model_results = run_gemini_matching(
                 remaining_for_model, clean_reference_entries, model_name, threshold
             )
+        elif backend == "instructor":                 
+            if verbose or _VERBOSE_MODE:
+                logger.info(f"Using instructor for fuzzy matching with model {model}")
+
+            try:
+                prompt_matcher = get_client(model_name=model, api_key=api_key) 
+            except Exception as e:
+                logger.error(f"Instructor model loading failed: {e}")
+                raise
+
+            model_results_list = []
+            for query in tqdm(remaining_for_model, desc="Instructor matching"):
+                if query:
+                    match_result = prompt_fuzzy_match(prompt_matcher, query, clean_reference_entries)
+                    model_results_list.append({
+                        "given_entity": query,
+                        "alethia_prediction": match_result['text'],
+                        "alethia_score": match_result['score'] / 100.0,  # convert back to 0-1 scale
+                    })                    
+
+            model_results = pd.DataFrame(model_results_list)
         else:
             if backend == "auto":
                 backend = get_best_available_backend(prefer_cpu=force_cpu)
