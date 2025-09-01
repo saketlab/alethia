@@ -22,6 +22,16 @@ You can install alethia via pip:
 
 For development installation:
 
+
+.. code-block:: bash
+
+    conda create -n alethia python pip
+    conda activate alethia
+    git clone https://github.com/saketlab/alethia.git
+    cd alethia
+    pip install -e .
+
+
 .. code-block:: bash
 
     mamba create -n alethia python pip
