@@ -25,7 +25,7 @@ For development installation:
 
 .. code-block:: bash
 
-    conda create -n alethia python pip
+    conda create -n alethia python=3.11 pip
     conda activate alethia
     git clone https://github.com/saketlab/alethia.git
     cd alethia
