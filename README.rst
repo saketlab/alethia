@@ -32,13 +32,6 @@ For development installation:
     pip install -e .
 
 
-.. code-block:: bash
-
-    mamba create -n alethia python pip
-    mamba activate alethia
-    git clone https://github.com/saketlab/alethia.git
-    cd alethia
-    pip install -e .
 
 Quick Start
 ==========
