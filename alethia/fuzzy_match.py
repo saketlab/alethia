@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 from .utils import get_client, prompt_fuzzy_match
 
+
 class FuzzyLibraryManager:
     """Manages fuzzy matching library imports and availability"""
 
@@ -140,7 +141,13 @@ class RobustFuzzyMatcher:
     Robust fuzzy matcher that works with available libraries
     """
 
-    def __init__(self, algorithm: str = "ratio", preprocessor: str = "simple",  prompt_matcher: str = None, api_key: str = None):
+    def __init__(
+        self,
+        algorithm: str = "ratio",
+        preprocessor: str = "simple",
+        prompt_matcher: str = None,
+        api_key: str = None,
+    ):
         """
         Initialize the matcher
 
@@ -151,7 +158,11 @@ class RobustFuzzyMatcher:
         """
         self.algorithm = algorithm
         self.preprocessor_name = preprocessor
-        self.prompt_matcher = get_client(model_name=prompt_matcher, api_key=api_key) if prompt_matcher else None
+        self.prompt_matcher = (
+            get_client(model_name=prompt_matcher, api_key=api_key)
+            if prompt_matcher
+            else None
+        )
 
         # Get algorithm function
         self.algorithm_func = lib_manager.get_algorithm_function(algorithm)
@@ -229,7 +240,7 @@ class RobustFuzzyMatcher:
         candidates: List[str],
         limit: int = 5,
         score_cutoff: float = 0.0,
-        use_prompt: bool = False
+        use_prompt: bool = False,
     ) -> List[Dict]:
         """
         Find best matches for a single query
@@ -243,11 +254,11 @@ class RobustFuzzyMatcher:
             if self.prompt_matcher is None:
                 logger.error("Prompt matcher not initialized")
                 return results
-            
+
             llm_result = prompt_fuzzy_match(self.prompt_matcher, query, candidates)
             if llm_result:
                 return [llm_result]
-            
+
         elif self.process_extract and self.algorithm_func:
             # Try using optimized process.extract if available
             try:
@@ -288,7 +299,9 @@ class RobustFuzzyMatcher:
             except Exception as e:
                 logger.warning(f"process.extract failed: {e}, using manual calculation")
         else:
-            logger.debug("process_extract and/or algorithm_func not available, using manual calculation")
+            logger.debug(
+                "process_extract and/or algorithm_func not available, using manual calculation"
+            )
 
         # Manual calculation fallback
         scores = []
@@ -307,7 +320,7 @@ class RobustFuzzyMatcher:
         candidates: List[str],
         limit: int = 1,
         score_cutoff: float = 0.0,
-        use_prompt: bool = False
+        use_prompt: bool = False,
     ) -> pd.DataFrame:
         """
         Batch matching
@@ -315,7 +328,9 @@ class RobustFuzzyMatcher:
         results = []
 
         for query in queries:
-            matches = self.match_single(query, candidates, limit, score_cutoff, use_prompt)
+            matches = self.match_single(
+                query, candidates, limit, score_cutoff, use_prompt
+            )
 
             if matches:
                 best_match = matches[0]
@@ -359,7 +374,7 @@ def robust_fuzzy_match(
     algorithm: str = "ratio",
     threshold: float = 70.0,
     preprocessor: str = "simple",
-    prompt_matcher: str = None, 
+    prompt_matcher: str = None,
     api_key: str = None,
     use_prompt: bool = False,
 ) -> pd.DataFrame:
@@ -376,9 +391,16 @@ def robust_fuzzy_match(
     Returns:
         DataFrame with results
     """
-    matcher = RobustFuzzyMatcher(algorithm=algorithm, preprocessor=preprocessor, prompt_matcher=prompt_matcher, api_key=api_key)
+    matcher = RobustFuzzyMatcher(
+        algorithm=algorithm,
+        preprocessor=preprocessor,
+        prompt_matcher=prompt_matcher,
+        api_key=api_key,
+    )
 
-    results = matcher.match_batch(queries, candidates, limit=1, score_cutoff=threshold, use_prompt=use_prompt)
+    results = matcher.match_batch(
+        queries, candidates, limit=1, score_cutoff=threshold, use_prompt=use_prompt
+    )
 
     # Log library info
     info = matcher.get_library_info()
