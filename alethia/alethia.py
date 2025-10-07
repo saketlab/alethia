@@ -151,9 +151,9 @@ def check_optional_dependencies(verbose: bool = False):
         if verbose or _VERBOSE_MODE:
             logger.debug("✅ Gemini (Google GenerativeAI) available")
         globals()["genai"] = genai
-    except ImportError:
+    except (ImportError, SyntaxError) as e:
         if verbose or _VERBOSE_MODE:
-            logger.debug("❌ Gemini (Google GenerativeAI) not available")
+            logger.debug(f"❌ Gemini (Google GenerativeAI) not available: {e}")
         globals()["genai"] = None
 
     logger.setLevel(original_level)
@@ -827,7 +827,7 @@ def _merge_exact_and_model_results(
 def alethia(
     dirty_entries: List[str],
     reference_entries: List[str],
-    model: str = "rapidfuzz",
+    model: str = "auto",
     backend: str = "auto",
     force_cpu: bool = True,
     use_batch_optimization: bool = True,
@@ -965,10 +965,26 @@ def alethia(
                 remaining_for_model, clean_reference_entries, model_name, threshold
             )
         else:
-            if backend == "auto":
-                backend = get_best_available_backend(prefer_cpu=force_cpu)
+            # Auto-select best model for CPU if model="auto"
+            if model == "auto":
+                from .models import get_model_for_cpu_setup
+                model = get_model_for_cpu_setup(backend)
                 if verbose or _VERBOSE_MODE:
-                    logger.info(f"Auto-selected backend: {backend}")
+                    logger.info(f"Auto-selected CPU-optimized model: {model}")
+
+            # Auto-select or refine backend based on model and CPU preference
+            if backend == "auto":
+                from .models import get_best_backend_for_model
+                backend = get_best_backend_for_model(model, prefer_cpu=force_cpu)
+                if verbose or _VERBOSE_MODE:
+                    logger.info(f"Auto-selected backend for {model}: {backend}")
+            elif force_cpu and backend == "fastembed":
+                # Check if model is supported by FastEmbed when CPU is preferred
+                from .models import is_model_supported_by_fastembed
+                if not is_model_supported_by_fastembed(model):
+                    if verbose or _VERBOSE_MODE:
+                        logger.info(f"Model {model} not supported by FastEmbed, switching to sentence-transformers")
+                    backend = "sentence-transformers"
 
             try:
                 if backend == "fastembed":
@@ -1502,8 +1518,11 @@ def get_available_models(
     Returns:
         Dict[str, Union[List[str], pd.DataFrame]]: Dictionary mapping backend names to available models
     """
-    from .models import (classify_embedding_models, get_detailed_model_info,
-                         load_mteb_dashboard_data)
+    from .models import (
+        classify_embedding_models,
+        get_detailed_model_info,
+        load_mteb_dashboard_data,
+    )
 
     available_models = {}
 

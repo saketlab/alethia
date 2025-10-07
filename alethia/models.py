@@ -61,7 +61,9 @@ def load_mteb_dashboard_data() -> pd.DataFrame:
             "alethia.data", "mteb_dashboard.csv"
         ) as data_path:
             if data_path is None:
-                raise FileNotFoundError("MTEB dashboard data file path is None - package data not properly installed")
+                raise FileNotFoundError(
+                    "MTEB dashboard data file path is None - package data not properly installed"
+                )
             mteb_df = pd.read_csv(data_path)
 
         mteb_df = filter_huggingface_only(mteb_df)
@@ -685,3 +687,139 @@ def get_model_recommendation(use_case: str, constraint: str = None) -> List[str]
         )
 
     return models
+
+
+def get_best_cpu_model() -> str:
+    """
+    Get the best embedding model optimized for CPU usage.
+
+    This function returns the highest-performing model that can run efficiently
+    on CPU-only systems without requiring GPU acceleration.
+
+    Returns:
+        str: Model name optimized for CPU usage with best quality/performance ratio
+    """
+    # Based on MTEB leaderboard analysis:
+    # intfloat/multilingual-e5-large-instruct ranks #7 with:
+    # - 63.22 Mean Task score (excellent performance)
+    # - 1068 MB memory usage (manageable on CPU)
+    # - 560M parameters (reasonable size)
+    # - 1024 dimensions (good balance)
+    # - Instruction-tuned (better following of task instructions)
+    # - Multilingual support
+    return "intfloat/multilingual-e5-large-instruct"
+
+
+def get_cpu_optimized_models() -> List[str]:
+    """
+    Get a list of embedding models optimized for CPU-only execution.
+
+    Returns models ranked by CPU performance/quality ratio, suitable for
+    systems without GPU acceleration.
+
+    Returns:
+        List[str]: List of CPU-optimized models in order of preference
+    """
+    return [
+        # Best overall CPU performance
+        "intfloat/multilingual-e5-large-instruct",  # Rank #7 MTEB, 1.07GB, excellent quality
+        # Lighter alternatives with good performance
+        "mixedbread-ai/mxbai-embed-large-v1",  # Great balance, ~1.3GB
+        "sentence-transformers/all-MiniLM-L6-v2",  # Lightweight, 0.09GB, very fast
+        "BAAI/bge-small-en-v1.5",  # Optimized, 0.067GB, very fast
+        "BAAI/bge-base-en-v1.5",  # Good balance, 0.21GB
+        # Specialized options
+        "nomic-ai/nomic-embed-text-v1.5-Q",  # Quantized, 0.13GB, efficient
+        "snowflake/snowflake-arctic-embed-s",  # Small, 0.13GB, 2024 model
+        "jinaai/jina-embeddings-v2-small-en",  # 8192 tokens, 0.12GB
+    ]
+
+
+def get_model_for_cpu_setup(backend: str = "sentence-transformers") -> str:
+    """
+    Get the recommended model for CPU-only setup based on backend.
+
+    Args:
+        backend: The embedding backend to use
+
+    Returns:
+        str: Best model name for the specified backend on CPU
+    """
+    if backend == "sentence-transformers":
+        return get_best_cpu_model()
+    elif backend == "fastembed":
+        # FastEmbed-compatible models that work well on CPU
+        return "sentence-transformers/all-MiniLM-L6-v2"
+    else:
+        return get_best_cpu_model()
+
+
+def get_fastembed_supported_models() -> List[str]:
+    """
+    Get list of models supported by FastEmbed.
+    
+    Returns:
+        List[str]: List of model names supported by FastEmbed
+    """
+    return [
+        # Small models (384-512 dimensions)
+        "BAAI/bge-small-en-v1.5",
+        "BAAI/bge-small-zh-v1.5", 
+        "snowflake/snowflake-arctic-embed-xs",
+        "sentence-transformers/all-MiniLM-L6-v2",
+        "jinaai/jina-embeddings-v2-small-en",
+        
+        # Medium models (768 dimensions)
+        "BAAI/bge-base-en-v1.5",
+        "snowflake/snowflake-arctic-embed-s",
+        "nomic-ai/nomic-embed-text-v1.5",
+        "jinaai/jina-embeddings-v2-base-en",
+        
+        # Large models (1024 dimensions)
+        "mixedbread-ai/mxbai-embed-large-v1",
+        "snowflake/snowflake-arctic-embed-l",
+        "thenlper/gte-large",
+        "BAAI/bge-large-en-v1.5",
+        
+        # Multilingual
+        "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+        "intfloat/multilingual-e5-large",  # Note: not the -instruct variant
+    ]
+
+
+def is_model_supported_by_fastembed(model_name: str) -> bool:
+    """
+    Check if a model is supported by FastEmbed.
+    
+    Args:
+        model_name: Name of the model to check
+        
+    Returns:
+        bool: True if model is supported by FastEmbed
+    """
+    supported_models = get_fastembed_supported_models()
+    return model_name in supported_models
+
+
+def get_best_backend_for_model(model_name: str, prefer_cpu: bool = False) -> str:
+    """
+    Get the best backend for a specific model, considering CPU preference.
+    
+    Args:
+        model_name: Name of the model
+        prefer_cpu: Whether to prefer CPU-optimized backends
+        
+    Returns:
+        str: Best backend for the model ("sentence-transformers", "fastembed", etc.)
+    """
+    # Check if model is available in FastEmbed
+    if is_model_supported_by_fastembed(model_name):
+        if prefer_cpu:
+            # FastEmbed is generally more CPU-optimized
+            return "fastembed"
+        else:
+            # Both are available, prefer sentence-transformers for flexibility
+            return "sentence-transformers"
+    else:
+        # Model not in FastEmbed, must use sentence-transformers
+        return "sentence-transformers"
