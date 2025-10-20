@@ -9,6 +9,12 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
+from .cpu_optimizations import (
+    ClinicalCPUOptimizationConfig,
+    cpu_thread_pool,
+    get_cpu_optimized_model,
+    get_cpu_runtime_hints,
+)
 from .utils import (
     convert_memory_to_gb,
     get_client,
@@ -274,7 +280,13 @@ def load_fastembed_model(model_name: str):
         return None
 
 
-def load_sentence_transformer_model(model_name: str, force_cpu: bool = False):
+def load_sentence_transformer_model(
+    model_name: str,
+    force_cpu: bool = False,
+    optimize_cpu: bool = True,
+    optimization_config: Optional[ClinicalCPUOptimizationConfig] = None,
+    **model_kwargs,
+):
     """Load SentenceTransformer model with proper error handling"""
     if not SENTENCE_TRANSFORMERS_AVAILABLE:
         raise ImportError(
@@ -282,6 +294,18 @@ def load_sentence_transformer_model(model_name: str, force_cpu: bool = False):
         )
 
     try:
+        kwargs = dict(model_kwargs)
+        trust_remote = kwargs.pop("trust_remote_code", True)
+
+        if (force_cpu or not torch.cuda.is_available()) and optimize_cpu:
+            optimized_model = get_cpu_optimized_model(
+                model_name,
+                config=optimization_config,
+                model_kwargs={**kwargs, "trust_remote_code": trust_remote},
+            )
+            if optimized_model is not None:
+                return optimized_model
+
         if force_cpu or not torch.cuda.is_available():
             device = "cpu"
             if _VERBOSE_MODE:
@@ -291,7 +315,12 @@ def load_sentence_transformer_model(model_name: str, force_cpu: bool = False):
             if _VERBOSE_MODE:
                 logger.info(f"Loading {model_name} on GPU")
 
-        model = SentenceTransformer(model_name, device=device, trust_remote_code=True)
+        model = SentenceTransformer(
+            model_name,
+            device=device,
+            trust_remote_code=trust_remote,
+            **kwargs,
+        )
         if _VERBOSE_MODE:
             logger.info(f"✅ Successfully loaded {model_name}")
         return model
@@ -301,7 +330,10 @@ def load_sentence_transformer_model(model_name: str, force_cpu: bool = False):
             logger.warning("GPU memory error, trying CPU")
             try:
                 model = SentenceTransformer(
-                    model_name, device="cpu", trust_remote_code=True
+                    model_name,
+                    device="cpu",
+                    trust_remote_code=trust_remote,
+                    **kwargs,
                 )
                 if _VERBOSE_MODE:
                     logger.info(f"✅ Successfully loaded {model_name} on CPU")
@@ -524,14 +556,19 @@ def optimized_batch_matching(
         logger.info("Using optimized batch processing")
 
     all_texts = dirty_entries + reference_entries
+    hints = get_cpu_runtime_hints(model_obj)
+    batch_size = hints.get("batch_size") or 64
 
     if backend == "fastembed":
         all_embeddings = np.array(list(model_obj.embed(all_texts)))
     else:
         show_progress = _VERBOSE_MODE or len(all_texts) > 50
-        all_embeddings = model_obj.encode(
-            all_texts, batch_size=64, show_progress_bar=show_progress
-        )
+        with cpu_thread_pool(hints.get("num_threads")):
+            all_embeddings = model_obj.encode(
+                all_texts,
+                batch_size=batch_size,
+                show_progress_bar=show_progress,
+            )
 
     n_incorrect = len(dirty_entries)
     incorrect_embeddings = all_embeddings[:n_incorrect]
@@ -588,18 +625,20 @@ def standard_matching(
     if _VERBOSE_MODE:
         logger.info("Using standard processing")
 
+    hints = get_cpu_runtime_hints(model_obj)
     reference_embeddings = {}
     iterator = (
         tqdm(reference_entries, desc="Reference embeddings")
         if (_VERBOSE_MODE or len(reference_entries) > 20)
         else reference_entries
     )
-    for ref_entity in iterator:
-        if backend == "fastembed":
-            embedding = next(model_obj.embed([ref_entity]))
-        else:
-            embedding = model_obj.encode(ref_entity)
-        reference_embeddings[ref_entity] = embedding
+    with cpu_thread_pool(hints.get("num_threads")):
+        for ref_entity in iterator:
+            if backend == "fastembed":
+                embedding = next(model_obj.embed([ref_entity]))
+            else:
+                embedding = model_obj.encode(ref_entity)
+            reference_embeddings[ref_entity] = embedding
 
     results = []
     iterator = (
@@ -607,46 +646,47 @@ def standard_matching(
         if (_VERBOSE_MODE or len(dirty_entries) > 20)
         else dirty_entries
     )
-    for incorrect in iterator:
-        if str(incorrect) == "nan":
-            results.append(
-                {
-                    "given_entity": incorrect,
-                    "alethia_prediction": np.nan,
-                    "alethia_score": np.nan,
-                }
-            )
-            continue
+    with cpu_thread_pool(hints.get("num_threads")):
+        for incorrect in iterator:
+            if str(incorrect) == "nan":
+                results.append(
+                    {
+                        "given_entity": incorrect,
+                        "alethia_prediction": np.nan,
+                        "alethia_score": np.nan,
+                    }
+                )
+                continue
 
-        if backend == "fastembed":
-            query_embedding = next(model_obj.embed([incorrect]))
-        else:
-            query_embedding = model_obj.encode(incorrect)
+            if backend == "fastembed":
+                query_embedding = next(model_obj.embed([incorrect]))
+            else:
+                query_embedding = model_obj.encode(incorrect)
 
-        similarities = {}
-        for ref_entity, ref_embedding in reference_embeddings.items():
-            similarity = cosine_similarity(query_embedding, ref_embedding)
-            similarities[ref_entity] = similarity
+            similarities = {}
+            for ref_entity, ref_embedding in reference_embeddings.items():
+                similarity = cosine_similarity(query_embedding, ref_embedding)
+                similarities[ref_entity] = similarity
 
-        best_match = max(similarities, key=similarities.get)
-        best_score = similarities[best_match]
+            best_match = max(similarities, key=similarities.get)
+            best_score = similarities[best_match]
 
-        if best_score >= threshold:
-            results.append(
-                {
-                    "given_entity": incorrect,
-                    "alethia_prediction": best_match,
-                    "alethia_score": best_score,
-                }
-            )
-        else:
-            results.append(
-                {
-                    "given_entity": incorrect,
-                    "alethia_prediction": incorrect,
-                    "alethia_score": 1.0,
-                }
-            )
+            if best_score >= threshold:
+                results.append(
+                    {
+                        "given_entity": incorrect,
+                        "alethia_prediction": best_match,
+                        "alethia_score": best_score,
+                    }
+                )
+            else:
+                results.append(
+                    {
+                        "given_entity": incorrect,
+                        "alethia_prediction": incorrect,
+                        "alethia_score": 1.0,
+                    }
+                )
 
     return results
 

@@ -20,8 +20,11 @@ from .models import (
     classify_embedding_models,
     create_recommendation_matrix,
     filter_huggingface_only,
+    get_medical_models,
     get_model_recommendation,
+    get_recommended_medical_models,
     load_mteb_dashboard_data,
+    print_medical_models_guide,
     print_model_classification_guide,
 )
 from .stats import do_pca, do_umap, plot_embedding, plot_embedding_df
@@ -43,6 +46,10 @@ __all__ = [
     "filter_huggingface_only",
     "get_available_models",
     "print_model_recommendations",
+    # Medical/Clinical models
+    "get_medical_models",
+    "get_recommended_medical_models",
+    "print_medical_models_guide",
     # Convenience functions
     "get_lightweight_models",
     "get_balanced_models",
