@@ -15,6 +15,15 @@ from .alethia import (
     get_best_available_backend,
     load_sentence_transformer_model,
 )
+
+# Clinical NLP functionality
+from .clinical import (
+    ICD10Match,
+    batch_map_text_to_icd10,
+    get_clinical_llm_client,
+    load_icd10_data,
+    map_text_to_icd10,
+)
 from .embeddings import get_embeddings
 from .models import (
     classify_embedding_models,
@@ -50,6 +59,12 @@ __all__ = [
     "get_medical_models",
     "get_recommended_medical_models",
     "print_medical_models_guide",
+    # Clinical NLP
+    "map_text_to_icd10",
+    "batch_map_text_to_icd10",
+    "get_clinical_llm_client",
+    "load_icd10_data",
+    "ICD10Match",
     # Convenience functions
     "get_lightweight_models",
     "get_balanced_models",

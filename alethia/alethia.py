@@ -1060,12 +1060,14 @@ def alethia(
 
             except Exception as e:
                 logger.error(f"Model loading failed: {e}")
+                model_obj = None  # Ensure model_obj is None after loading failure
                 if backend != "rapidfuzz" and RAPIDFUZZ_AVAILABLE:
                     if verbose or _VERBOSE_MODE:
                         logger.info("Falling back to RapidFuzz")
                     model_results = run_rapidfuzz_matching(
                         remaining_for_model, clean_reference_entries
                     )
+                    backend = "rapidfuzz"  # Update backend to reflect actual backend used
                 elif backend != "openai" and OPENAI_AVAILABLE:
                     if verbose or _VERBOSE_MODE:
                         logger.info("Falling back to OpenAI")
@@ -1075,6 +1077,7 @@ def alethia(
                         "text-embedding-ada-002",
                         threshold,
                     )
+                    backend = "openai"  # Update backend to reflect actual backend used
                 elif backend != "gemini" and GEMINI_AVAILABLE:
                     if verbose or _VERBOSE_MODE:
                         logger.info("Falling back to Gemini")
@@ -1084,61 +1087,67 @@ def alethia(
                         "models/embedding-001",
                         threshold,
                     )
+                    backend = "gemini"  # Update backend to reflect actual backend used
                 else:
                     raise
 
-            try:
-                if use_batch_optimization and len(remaining_for_model) > 10:
-                    results = optimized_batch_matching(
-                        remaining_for_model,
-                        clean_reference_entries,
-                        model_obj,
-                        backend,
-                        threshold,
-                    )
-                    acceleration = "Batch-Optimized"
-                    if NUMBA_AVAILABLE:
-                        acceleration += "+Numba"
-                else:
-                    results = standard_matching(
-                        remaining_for_model,
-                        clean_reference_entries,
-                        model_obj,
-                        backend,
-                        threshold,
-                    )
-                    acceleration = "Standard"
+            # Only try model processing if model_obj was successfully loaded
+            if model_obj is not None:
+                try:
+                    if use_batch_optimization and len(remaining_for_model) > 10:
+                        results = optimized_batch_matching(
+                            remaining_for_model,
+                            clean_reference_entries,
+                            model_obj,
+                            backend,
+                            threshold,
+                        )
+                        acceleration = "Batch-Optimized"
+                        if NUMBA_AVAILABLE:
+                            acceleration += "+Numba"
+                    else:
+                        results = standard_matching(
+                            remaining_for_model,
+                            clean_reference_entries,
+                            model_obj,
+                            backend,
+                            threshold,
+                        )
+                        acceleration = "Standard"
 
-                model_results = pd.DataFrame(results)
+                    model_results = pd.DataFrame(results)
 
-            except Exception as e:
-                logger.error(f"Processing failed: {e}")
-                if backend != "rapidfuzz" and RAPIDFUZZ_AVAILABLE:
-                    if verbose or _VERBOSE_MODE:
-                        logger.info("Falling back to RapidFuzz")
-                    model_results = run_rapidfuzz_matching(
-                        remaining_for_model, clean_reference_entries
-                    )
-                elif backend != "openai" and OPENAI_AVAILABLE:
-                    if verbose or _VERBOSE_MODE:
-                        logger.info("Falling back to OpenAI")
-                    model_results = run_openai_matching(
-                        remaining_for_model,
-                        clean_reference_entries,
-                        "text-embedding-ada-002",
-                        threshold,
-                    )
-                elif backend != "gemini" and GEMINI_AVAILABLE:
-                    if verbose or _VERBOSE_MODE:
-                        logger.info("Falling back to Gemini")
-                    model_results = run_gemini_matching(
-                        remaining_for_model,
-                        clean_reference_entries,
-                        "models/embedding-001",
-                        threshold,
-                    )
-                else:
-                    raise
+                except Exception as e:
+                    logger.error(f"Processing failed: {e}")
+                    if backend != "rapidfuzz" and RAPIDFUZZ_AVAILABLE:
+                        if verbose or _VERBOSE_MODE:
+                            logger.info("Falling back to RapidFuzz")
+                        model_results = run_rapidfuzz_matching(
+                            remaining_for_model, clean_reference_entries
+                        )
+                        backend = "rapidfuzz"  # Update backend to reflect actual backend used
+                    elif backend != "openai" and OPENAI_AVAILABLE:
+                        if verbose or _VERBOSE_MODE:
+                            logger.info("Falling back to OpenAI")
+                        model_results = run_openai_matching(
+                            remaining_for_model,
+                            clean_reference_entries,
+                            "text-embedding-ada-002",
+                            threshold,
+                        )
+                        backend = "openai"  # Update backend to reflect actual backend used
+                    elif backend != "gemini" and GEMINI_AVAILABLE:
+                        if verbose or _VERBOSE_MODE:
+                            logger.info("Falling back to Gemini")
+                        model_results = run_gemini_matching(
+                            remaining_for_model,
+                            clean_reference_entries,
+                            "models/embedding-001",
+                            threshold,
+                        )
+                        backend = "gemini"  # Update backend to reflect actual backend used
+                    else:
+                        raise
 
         # MERGE EXACT MATCHES WITH MODEL RESULTS
         final_results = _reconstruct_results_with_exact_and_model_matches(
