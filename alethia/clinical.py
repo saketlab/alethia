@@ -14,10 +14,11 @@ import importlib.resources
 import json
 import logging
 import re
+from difflib import get_close_matches
 from typing import Any, Dict, List, Optional, Union
 
 import pandas as pd
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -41,6 +42,103 @@ except ImportError:
     logger.debug("instructor not available")
 
 
+SEMANTIC_MODEL_NAME = "FremyCompany/BioLORD-2023"
+_SEMANTIC_MODEL = None
+_SEMANTIC_MODEL_UNAVAILABLE = False
+
+
+def _get_semantic_model():
+    """Load and cache the sentence-transformers model used for semantic search."""
+
+    global _SEMANTIC_MODEL, _SEMANTIC_MODEL_UNAVAILABLE
+
+    if _SEMANTIC_MODEL_UNAVAILABLE:
+        return None
+
+    if _SEMANTIC_MODEL is None:
+        try:
+            from sentence_transformers import SentenceTransformer
+
+            logger.debug("Loading semantic similarity model: %s", SEMANTIC_MODEL_NAME)
+            _SEMANTIC_MODEL = SentenceTransformer(SEMANTIC_MODEL_NAME)
+        except ImportError:
+            logger.warning(
+                "sentence-transformers not available; install with `pip install sentence-transformers` for improved ICD-10 matching"
+            )
+            _SEMANTIC_MODEL_UNAVAILABLE = True
+            return None
+        except Exception as exc:
+            logger.warning(
+                "Failed to load semantic similarity model (%s): %s", SEMANTIC_MODEL_NAME, exc
+            )
+            _SEMANTIC_MODEL_UNAVAILABLE = True
+            return None
+
+    return _SEMANTIC_MODEL
+
+
+def _normalize_cosine_similarity(score: float) -> float:
+    """Normalize cosine similarity (-1 to 1) into [0, 1] range."""
+
+    return max(0.0, min(1.0, (score + 1.0) / 2.0))
+
+
+def _semantic_similarity_ranking(
+    clinical_text: str, candidates_df: pd.DataFrame
+) -> pd.DataFrame:
+    """Rank candidate ICD-10 rows by semantic similarity to the clinical text."""
+
+    if not clinical_text or candidates_df.empty:
+        return pd.DataFrame()
+
+    model = _get_semantic_model()
+    if model is None:
+        return pd.DataFrame()
+
+    try:
+        from sentence_transformers import util
+        import torch
+    except ImportError:
+        return pd.DataFrame()
+
+    candidate_subset = (
+        candidates_df.dropna(subset=["description2"])
+        .copy()
+        .astype({"description2": str})
+    )
+    candidate_subset["description2"] = candidate_subset["description2"].str.strip()
+    candidate_subset = candidate_subset[candidate_subset["description2"] != ""]
+    candidate_subset = candidate_subset.drop_duplicates(subset=["description2"]).reset_index(
+        drop=True
+    )
+
+    if candidate_subset.empty:
+        return pd.DataFrame()
+
+    try:
+        query_embedding = model.encode(clinical_text, convert_to_tensor=True)
+        description_embeddings = model.encode(
+            candidate_subset["description2"].tolist(),
+            convert_to_tensor=True,
+            show_progress_bar=False,
+        )
+
+        similarities = util.cos_sim(query_embedding, description_embeddings)[0]
+        similarity_values = similarities.detach().cpu().numpy()
+        candidate_subset["similarity"] = similarity_values
+        candidate_subset.sort_values(
+            by="similarity", ascending=False, inplace=True, ignore_index=True
+        )
+
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
+        return candidate_subset
+    except Exception as exc:
+        logger.debug("Semantic similarity ranking failed: %s", exc)
+        return pd.DataFrame()
+
+
 # Pydantic models for structured ICD-10 outputs
 class ICD10Match(BaseModel):
     """Response model for ICD-10 category matching based on description2."""
@@ -55,6 +153,26 @@ class ICD10Match(BaseModel):
         default=None,
         description="Brief explanation of why this category was selected",
     )
+
+    @field_validator("confidence", mode="before")
+    @classmethod
+    def clamp_confidence(cls, value: Any) -> float:
+        """Normalize confidence into the [0.0, 1.0] range."""
+        if value is None:
+            logger.warning("Confidence value missing; defaulting to 0.0")
+            return 0.0
+
+        try:
+            numeric = float(value)
+        except (TypeError, ValueError) as exc:
+            raise ValueError("Confidence must be a numeric value") from exc
+
+        if numeric < 0.0 or numeric > 1.0:
+            logger.warning(
+                "Received out-of-range confidence %.2f; clamping to [0, 1]", numeric
+            )
+
+        return max(0.0, min(numeric, 1.0))
 
 
 class HuggingFaceLLMClient:
@@ -310,47 +428,36 @@ def build_icd10_context(
     # If we have clinical text and semantic search is enabled, use it to find relevant categories
     if clinical_text and use_semantic_search and len(unique_desc3) > max_codes:
         try:
-            from sentence_transformers import SentenceTransformer, util
+            from sentence_transformers import util
             import torch
 
             logger.info(
                 f"Stage 1: Using semantic search on description3 to find top {max_codes} most relevant ICD-10 categories..."
             )
 
-            # Load a lightweight model for semantic search
-            model = SentenceTransformer("FremyCompany/BioLORD-2023")
+            model = _get_semantic_model()
+            if model is None:
+                raise RuntimeError("Semantic model unavailable")
 
-            # Encode clinical text
-            query_embedding = model.encode(clinical_text, convert_to_tensor=True)
-
-            # Encode all unique description3 categories
             categories = unique_desc3["description3"].tolist()
+            query_embedding = model.encode(clinical_text, convert_to_tensor=True)
             category_embeddings = model.encode(
                 categories, convert_to_tensor=True, show_progress_bar=False
             )
 
-            # Compute cosine similarities
             similarities = util.cos_sim(query_embedding, category_embeddings)[0]
 
-            # Get top-k most similar categories
+            top_k = min(max_codes, len(categories))
             top_k_indices = (
-                torch.topk(similarities, k=min(max_codes, len(categories)))
-                .indices.cpu()
-                .numpy()
+                torch.topk(similarities, k=top_k).indices.cpu().numpy()
             )
 
-            # Filter to top-k categories
             unique_desc3 = unique_desc3.iloc[top_k_indices].copy()
 
             logger.info(
                 f"Stage 1: Selected top {len(unique_desc3)} semantically relevant description3 categories"
             )
 
-            # Free up GPU memory by deleting the model
-            del model
-            del query_embedding
-            del category_embeddings
-            del similarities
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
 
@@ -592,59 +699,170 @@ IMPORTANT:
             )
 
             # Find matching ICD-10 records by description2
+            normalized_description2 = response.matched_description2.strip()
+
             matched_rows = filtered_icd10_df[
-                filtered_icd10_df["description2"] == response.matched_description2
+                filtered_icd10_df["description2"].astype(str).str.strip()
+                == normalized_description2
             ]
 
             if len(matched_rows) == 0:
-                # Fuzzy match if exact match fails
-                logger.warning(
-                    f"No exact match for '{response.matched_description2}', "
-                    f"attempting fuzzy match..."
-                )
-                # Use simple string matching on description2
-                desc2_lower = response.matched_description2.lower()
                 matched_rows = filtered_icd10_df[
-                    filtered_icd10_df["description2"]
-                    .str.lower()
-                    .str.contains(desc2_lower.split()[0], regex=False, na=False)
+                    filtered_icd10_df["description2"].astype(str).str.strip().str.casefold()
+                    == normalized_description2.casefold()
                 ]
 
+            fallback_df = filtered_icd10_df
+            if len(matched_rows) == 0:
+                logger.warning(
+                    f"No exact match for '{response.matched_description2}', attempting fuzzy match..."
+                )
+
+                candidate_descriptions = (
+                    filtered_icd10_df["description2"].dropna().astype(str).str.strip().unique().tolist()
+                )
+                best_match = get_close_matches(
+                    normalized_description2, candidate_descriptions, n=1, cutoff=0.75
+                )
+
+                if not best_match:
+                    candidate_descriptions = (
+                        icd10_df["description2"].dropna().astype(str).str.strip().unique().tolist()
+                    )
+                    best_match = get_close_matches(
+                        normalized_description2, candidate_descriptions, n=1, cutoff=0.65
+                    )
+                    fallback_df = icd10_df
+
+                if best_match:
+                    logger.info(
+                        "Fuzzy matched '%s' to '%s'",
+                        normalized_description2,
+                        best_match[0],
+                    )
+                    matched_rows = fallback_df[
+                        fallback_df["description2"].astype(str).str.strip() == best_match[0]
+                    ]
+
+            semantic_candidates = _semantic_similarity_ranking(
+                clinical_text, filtered_icd10_df
+            )
+
             if len(matched_rows) > 0:
-                # Take first matching row as representative
                 match_row = matched_rows.iloc[0].to_dict()
+                resolved_description2 = (
+                    match_row.get("description2") or response.matched_description2
+                )
+                matched_similarity = None
+                semantic_override = False
+
+                if not semantic_candidates.empty:
+                    semantic_top = semantic_candidates.iloc[0]
+                    match_desc_casefold = resolved_description2.casefold()
+                    candidate_match = semantic_candidates[
+                        semantic_candidates["description2"].str.casefold()
+                        == match_desc_casefold
+                    ]
+                    if not candidate_match.empty:
+                        matched_similarity = float(candidate_match.iloc[0]["similarity"])
+                    else:
+                        matched_similarity = None
+
+                    best_similarity = float(semantic_top["similarity"])
+                    best_description = semantic_top["description2"]
+                    similarity_gap = (
+                        best_similarity
+                        - (matched_similarity if matched_similarity is not None else -1.0)
+                    )
+
+                    if best_description.casefold() != match_desc_casefold and (
+                        similarity_gap > 0.05 or float(response.confidence) < 0.5
+                    ):
+                        logger.info(
+                            "Overriding LLM prediction '%s' with semantic match '%s' (similarity gap: %.3f)",
+                            resolved_description2,
+                            best_description,
+                            similarity_gap,
+                        )
+                        match_row = semantic_top.to_dict()
+                        resolved_description2 = match_row["description2"]
+                        matched_similarity = best_similarity
+                        semantic_override = True
+
+                if matched_similarity is None and not semantic_candidates.empty:
+                    matched_similarity = float(semantic_candidates.iloc[0]["similarity"])
+
+                normalized_confidence = float(response.confidence)
+                if matched_similarity is not None:
+                    normalized_confidence = max(
+                        normalized_confidence,
+                        _normalize_cosine_similarity(matched_similarity),
+                    )
+
                 match_row["original_text"] = clinical_text
-                match_row["matched_description2"] = response.matched_description2
-                match_row["confidence"] = response.confidence
+                match_row["matched_description2"] = resolved_description2
+                match_row["confidence"] = normalized_confidence
                 match_row["reasoning"] = (
                     response.reasoning if include_reasoning else None
                 )
                 results.append(match_row)
 
                 logger.info(
-                    f"Matched to: {response.matched_description2} "
-                    f"(category: {match_row.get('description3', 'N/A')}, "
-                    f"code: {match_row['icd_fullcode']}, "
-                    f"confidence: {response.confidence:.2f})"
+                    "Matched to: %s (category: %s, code: %s, confidence: %.2f)%s",
+                    resolved_description2,
+                    match_row.get("description3", "N/A"),
+                    match_row.get("icd_fullcode", "N/A"),
+                    normalized_confidence,
+                    " via semantic override" if semantic_override else "",
                 )
             else:
                 # No match found, create placeholder
-                logger.warning(f"Could not find ICD-10 match for: {clinical_text}")
-                results.append(
-                    {
-                        "original_text": clinical_text,
-                        "matched_description2": response.matched_description2,
-                        "confidence": response.confidence,
-                        "reasoning": response.reasoning if include_reasoning else None,
-                        "icd_cat": None,
-                        "icd_code": None,
-                        "icd_fullcode": None,
-                        "description1": None,
-                        "description2": None,
-                        "description3": None,
-                        "icd_code_who_eq": None,
-                    }
+                semantic_top_row = (
+                    semantic_candidates.iloc[0] if not semantic_candidates.empty else None
                 )
+
+                if semantic_top_row is not None:
+                    logger.info(
+                        "Using semantic similarity fallback for '%s' -> '%s'",
+                        clinical_text,
+                        semantic_top_row["description2"],
+                    )
+
+                    match_row = semantic_top_row.to_dict()
+                    similarity_score = float(semantic_top_row["similarity"])
+                    match_row["original_text"] = clinical_text
+                    match_row["matched_description2"] = match_row["description2"]
+                    match_row["confidence"] = _normalize_cosine_similarity(
+                        similarity_score
+                    )
+                    match_row["reasoning"] = (
+                        response.reasoning if include_reasoning else None
+                    )
+                    results.append(match_row)
+
+                    logger.info(
+                        "Semantic fallback matched to: %s (code: %s, confidence: %.2f)",
+                        match_row["description2"],
+                        match_row.get("icd_fullcode", "N/A"),
+                        match_row["confidence"],
+                    )
+                else:
+                    logger.warning(f"Could not find ICD-10 match for: {clinical_text}")
+                    results.append(
+                        {
+                            "original_text": clinical_text,
+                            "matched_description2": response.matched_description2,
+                            "confidence": response.confidence,
+                            "reasoning": response.reasoning if include_reasoning else None,
+                            "icd_cat": None,
+                            "icd_code": None,
+                            "icd_fullcode": None,
+                            "description1": None,
+                            "description2": None,
+                            "description3": None,
+                            "icd_code_who_eq": None,
+                        }
+                    )
 
         except Exception as e:
             logger.error(f"Failed to map text to ICD-10: {e}")

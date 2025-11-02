@@ -592,26 +592,19 @@ def optimized_batch_matching(
     best_indices = np.argmax(similarity_matrix, axis=1)
     best_scores = np.max(similarity_matrix, axis=1)
 
+    # Always return the best match from reference, even if below threshold
+    # Users can filter by score themselves if needed
     results = []
     for i, (entry, ref_idx, sim) in enumerate(
         zip(dirty_entries, best_indices, best_scores)
     ):
-        if sim >= threshold:
-            results.append(
-                {
-                    "given_entity": entry,
-                    "alethia_prediction": reference_entries[ref_idx],
-                    "alethia_score": float(sim),
-                }
-            )
-        else:
-            results.append(
-                {
-                    "given_entity": entry,
-                    "alethia_prediction": entry,
-                    "alethia_score": 1.0,
-                }
-            )
+        results.append(
+            {
+                "given_entity": entry,
+                "alethia_prediction": reference_entries[ref_idx],
+                "alethia_score": float(sim),
+            }
+        )
 
     return results
 
@@ -671,22 +664,13 @@ def standard_matching(
             best_match = max(similarities, key=similarities.get)
             best_score = similarities[best_match]
 
-            if best_score >= threshold:
-                results.append(
-                    {
-                        "given_entity": incorrect,
-                        "alethia_prediction": best_match,
-                        "alethia_score": best_score,
-                    }
-                )
-            else:
-                results.append(
-                    {
-                        "given_entity": incorrect,
-                        "alethia_prediction": incorrect,
-                        "alethia_score": 1.0,
-                    }
-                )
+            results.append(
+                {
+                    "given_entity": incorrect,
+                    "alethia_prediction": best_match,
+                    "alethia_score": best_score,
+                }
+            )
 
     return results
 
@@ -762,7 +746,6 @@ def _find_exact_matches(
     remaining_dirty_entries = []
     remaining_indices = []
 
-    # Create lookup set for fast matching
     if case_sensitive:
         reference_set = set(reference_entries)
     else:
@@ -882,7 +865,7 @@ def alethia(
     exact_match_case_sensitive: bool = False,
     return_model_attrs: bool = True,
     drop_duplicates: bool = True,
-    remove_identical_hits: bool = False,
+    remove_identical_hits: bool = True,
     api_key: str = "",
     **kwargs,
 ) -> pd.DataFrame:
@@ -900,6 +883,10 @@ def alethia(
         verbose: Enable verbose logging and progress bars
         use_exact_matching: Enable exact match pre-filtering
         exact_match_case_sensitive: Whether exact matching should be case-sensitive
+        return_model_attrs: Include model and backend columns in results (default: True)
+        drop_duplicates: Remove duplicate rows from results (default: True)
+        remove_identical_hits: Remove rows where prediction equals input - useful when dirty entries
+            are in reference list and you don't want self-matches (default: True)
         api_key: API key for the instructor if required
         **kwargs: Additional arguments (model_name for API backends)
 
@@ -989,6 +976,18 @@ def alethia(
             )
 
             final_results["alethia_method"] = "exact"
+
+            # Apply remove_identical_hits filter before returning
+            if remove_identical_hits:
+                final_results = final_results[
+                    final_results.given_entity != final_results.alethia_prediction
+                ]
+                if verbose or _VERBOSE_MODE:
+                    logger.info(f"Filtered out {len(exact_matches) - len(final_results)} self-matches")
+
+            if drop_duplicates:
+                final_results = final_results.drop_duplicates()
+
             return final_results
 
         # MODEL-BASED MATCHING PHASE (for remaining entries)
@@ -1061,35 +1060,61 @@ def alethia(
             except Exception as e:
                 logger.error(f"Model loading failed: {e}")
                 model_obj = None  # Ensure model_obj is None after loading failure
-                if backend != "rapidfuzz" and RAPIDFUZZ_AVAILABLE:
+
+                # Try alternative embedding backends before falling back to fuzzy matching
+                if backend == "fastembed" and SENTENCE_TRANSFORMERS_AVAILABLE:
                     if verbose or _VERBOSE_MODE:
-                        logger.info("Falling back to RapidFuzz")
-                    model_results = run_rapidfuzz_matching(
-                        remaining_for_model, clean_reference_entries
-                    )
-                    backend = "rapidfuzz"  # Update backend to reflect actual backend used
-                elif backend != "openai" and OPENAI_AVAILABLE:
-                    if verbose or _VERBOSE_MODE:
-                        logger.info("Falling back to OpenAI")
-                    model_results = run_openai_matching(
-                        remaining_for_model,
-                        clean_reference_entries,
-                        "text-embedding-ada-002",
-                        threshold,
-                    )
-                    backend = "openai"  # Update backend to reflect actual backend used
-                elif backend != "gemini" and GEMINI_AVAILABLE:
-                    if verbose or _VERBOSE_MODE:
-                        logger.info("Falling back to Gemini")
-                    model_results = run_gemini_matching(
-                        remaining_for_model,
-                        clean_reference_entries,
-                        "models/embedding-001",
-                        threshold,
-                    )
-                    backend = "gemini"  # Update backend to reflect actual backend used
-                else:
-                    raise
+                        logger.info("FastEmbed failed, trying sentence-transformers")
+
+                    # Try with current force_cpu setting
+                    model_obj = load_sentence_transformer_model(model, force_cpu=force_cpu)
+
+                    # If CPU failed and force_cpu=True, try GPU
+                    if model_obj is None and force_cpu:
+                        if verbose or _VERBOSE_MODE:
+                            logger.info("CPU loading failed, retrying sentence-transformers with GPU")
+                        model_obj = load_sentence_transformer_model(model, force_cpu=False)
+
+                    # Update backend if model loaded successfully
+                    if model_obj is not None:
+                        backend = "sentence-transformers"
+                        if verbose or _VERBOSE_MODE:
+                            logger.info(f"Successfully loaded with sentence-transformers")
+                    else:
+                        if verbose or _VERBOSE_MODE:
+                            logger.warning(f"sentence-transformers failed to load {model}")
+
+                # If still no model loaded, fall back to fuzzy/API methods
+                if model_obj is None:
+                    if backend != "rapidfuzz" and RAPIDFUZZ_AVAILABLE:
+                        if verbose or _VERBOSE_MODE:
+                            logger.info("Falling back to RapidFuzz")
+                        model_results = run_rapidfuzz_matching(
+                            remaining_for_model, clean_reference_entries
+                        )
+                        backend = "rapidfuzz"  # Update backend to reflect actual backend used
+                    elif backend != "openai" and OPENAI_AVAILABLE:
+                        if verbose or _VERBOSE_MODE:
+                            logger.info("Falling back to OpenAI")
+                        model_results = run_openai_matching(
+                            remaining_for_model,
+                            clean_reference_entries,
+                            "text-embedding-ada-002",
+                            threshold,
+                        )
+                        backend = "openai"  # Update backend to reflect actual backend used
+                    elif backend != "gemini" and GEMINI_AVAILABLE:
+                        if verbose or _VERBOSE_MODE:
+                            logger.info("Falling back to Gemini")
+                        model_results = run_gemini_matching(
+                            remaining_for_model,
+                            clean_reference_entries,
+                            "models/embedding-001",
+                            threshold,
+                        )
+                        backend = "gemini"  # Update backend to reflect actual backend used
+                    else:
+                        raise
 
             # Only try model processing if model_obj was successfully loaded
             if model_obj is not None:
