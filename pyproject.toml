@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "alethia"
 version = "0.1.0"
-description = "Package to perform fuzzy matching using language models." 
+description = "Package to perform fuzzy matching using language models."
 readme = "README.rst"
 authors = [
   {name = "Saket Choudhary", email = "saketkc@gmail.com"}
@@ -17,11 +17,10 @@ classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",  
+    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -30,25 +29,27 @@ classifiers = [
     "Topic :: Text Processing :: Linguistic",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-license = {text = "MIT license"}
+license = "MIT"
 requires-python = ">=3.8"
 
 dependencies = [
     "numpy>=1.21.0",
     "pandas>=1.3.0",
     "tqdm>=4.60.0",
-    "psutil>=5.8.0",  
+    "psutil>=5.8.0",
+    "typer>=0.9.0",
+    "rich>=13.0.0",
 ]
 
 [project.optional-dependencies]
 
 cpu = [
-    "fastembed>=0.6.1", 
+    "fastembed>=0.6.1",
     "rapidfuzz>=3.0.0",
-    "faiss-cpu>=1.7.0", 
+    "faiss-cpu>=1.7.0",
     "scikit-learn>=1.0.0",
     "umap-learn>=0.5.0",
-    "numba>=0.56.0",  
+    "numba>=0.56.0",
     "matplotlib>=3.5.0",
     "seaborn>=0.11.0",
 ]
@@ -56,8 +57,11 @@ cpu = [
 gpu = [
     "sentence-transformers>=3.0.0",
     "torch>=2.0.0",
+    "transformers>=4.20.0",
+    "accelerate>=0.20.0",
+    "outlines>=0.1.0",
     "rapidfuzz>=3.0.0",
-    "faiss-cpu>=1.7.0", # gpu version doesn't work 
+    "faiss-cpu>=1.7.0", # gpu version doesn't work
     "numba>=0.56.0",
     "fastembed>=0.6.1",
 ]
@@ -70,8 +74,12 @@ full = [
     "rapidfuzz>=3.0.0",
     "numba>=0.56.0",
     "transformers>=4.20.0",
+    "accelerate>=0.20.0",
+    "outlines>=0.1.0",
     "openai>=1.0.0",
     "google-generativeai>=0.3.0",
+    "instructor>=1.0.0",
+    "pydantic>=2.0.0",
     "matplotlib>=3.5.0",
     "seaborn>=0.11.0",
     "scikit-learn>=1.0.0",
@@ -81,6 +89,8 @@ full = [
 
 fuzzy = [
     "rapidfuzz>=3.0.0",
+    "fuzzywuzzy>=0.18.0",
+    "jellyfish>=0.9.0",
     "numba>=0.56.0",
 ]
 
@@ -88,6 +98,8 @@ cloud = [
     "openai>=1.0.0",
     "google-generativeai>=0.3.0",
     "rapidfuzz>=3.0.0",
+    "instructor>=1.0.0",
+    "pydantic>=2.0.0",
 ]
 
 performance = [
@@ -95,6 +107,7 @@ performance = [
     "faiss-cpu>=1.7.0",
     "rapidfuzz>=3.0.0",
     "fastembed>=0.6.1",
+    "optimum[onnxruntime]>=1.12.0",
 ]
 
 recommended = [
@@ -103,6 +116,8 @@ recommended = [
     "numba>=0.56.0",
     "openai>=1.0.0",
     "google-generativeai>=0.3.0",
+    "instructor>=1.0.0",
+    "pydantic>=2.0.0",
 ]
 
 dev = [
@@ -124,11 +139,16 @@ test = [
     "pytest-mock>=3.10.0",
     "pytest-asyncio>=0.21.0",
     "sentence-transformers>=3.0.0",
+    "transformers>=4.20.0",
+    "accelerate>=0.20.0",
+    "torch>=2.0.0",
     "fastembed>=0.6.1",
     "rapidfuzz>=3.0.0",
     "numba>=0.56.0",
     "openai>=1.0.0",
     "google-generativeai>=0.3.0",
+    "instructor>=1.0.0",
+    "pydantic>=2.0.0",
 ]
 
 plot = [
@@ -137,10 +157,11 @@ plot = [
     "scikit-learn>=1.0.0",
     "umap-learn>=0.5.0",
     "plotly>=5.0.0",
+    "adjustText>=0.8.0",
 ]
 
 experimental = [
-    "chromadb>=0.4.0", 
+    "chromadb>=0.4.0",
 ]
 
 profiling = [
@@ -151,13 +172,22 @@ profiling = [
     "psutil>=5.8.0",
 ]
 
+docs = [
+    "sphinx>=7.0.0",
+    "furo>=2024.1.29",
+    "sphinx-autodoc-typehints>=2.0.0",
+    "sphinx-copybutton>=0.5.0",
+    "myst-parser>=2.0.0",
+    "linkify-it-py>=2.0.0",
+]
+
 
 [project.urls]
-homepage = "https://github.com/saketkc/alethia"
-repository = "https://github.com/saketkc/alethia"
-documentation = "https://github.com/saketkc/alethia#readme"
-bugs = "https://github.com/saketkc/alethia/issues"
-changelog = "https://github.com/saketkc/alethia/blob/master/CHANGELOG.md"
+homepage = "https://github.com/saketlab/alethia"
+repository = "https://github.com/saketlab/alethia"
+documentation = "https://github.com/sakelab/alethia#readme"
+bugs = "https://github.com/saketlab/alethia/issues"
+changelog = "https://github.com/saketlab/alethia/blob/main/HISTORY.rst"
 
 [project.scripts]
 alethia = "alethia.cli:main"
@@ -277,7 +307,7 @@ filterwarnings = [
 ]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
-    "api: marks tests that require API keys", 
+    "api: marks tests that require API keys",
     "gpu: marks tests that require GPU",
     "integration: marks integration tests",
 ]

@@ -1,19 +1,30 @@
-.PHONY: clean clean-build clean-pyc clean-test coverage dist docs help install lint lint/flake8
+.PHONY: clean clean-build clean-pyc clean-test coverage dist docs help install lint format test test-all release
 
 .DEFAULT_GOAL := help
 
+# Detect if uv is available
+UV := $(shell command -v uv 2> /dev/null)
+
+# Use uv if available, otherwise fallback to pip
+ifdef UV
+	PIP := uv pip
+	BUILD := uv build
+	VERSION_BUMP := uv version
+else
+	PIP := pip
+	BUILD := python -m build
+	VERSION_BUMP := @echo "uv not found. Install with: pip install uv"
+endif
+
 define BROWSER_PYSCRIPT
 import os, webbrowser, sys
-
 from urllib.request import pathname2url
-
 webbrowser.open("file://" + pathname2url(os.path.abspath(sys.argv[1])))
 endef
 export BROWSER_PYSCRIPT
 
 define PRINT_HELP_PYSCRIPT
 import re, sys
-
 for line in sys.stdin:
 	match = re.match(r'^([a-zA-Z_-]+):.*?## (.*)$$', line)
 	if match:
@@ -27,7 +38,7 @@ BROWSER := python -c "$$BROWSER_PYSCRIPT"
 help:
 	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
 
-clean: clean-build clean-pyc clean-test ## remove all build, test, coverage and Python artifacts
+clean: clean-build clean-pyc clean-test clean-docs ## remove all build, test, coverage and Python artifacts
 
 clean-build: ## remove build artifacts
 	rm -fr build/
@@ -48,16 +59,20 @@ clean-test: ## remove test and coverage artifacts
 	rm -fr htmlcov/
 	rm -fr .pytest_cache
 
+clean-docs: ## remove documentation build artifacts
+	rm -rf docs/_build/
+	rm -rf docs/api/generated/
 
-lint:  ## Run linting
-	flake8 alethia/ examples/ notebooks/  
-	mypy alethia/ examples/ notebooks/  
+lint: ## check style with ruff and mypy
+	ruff check alethia/ tests/
+	mypy alethia/
 
-format:  ## Format code
-	black alethia/ examples/ notebooks/ 
-	isort alethia/ examples/ notebooks/  
+lint-fix: ## fix style issues with ruff
+	ruff check --fix alethia/ tests/
 
-lint: lint/flake8 ## check style
+format: ## format code with black and ruff
+	black alethia/ tests/
+	ruff check --fix alethia/ tests/
 
 test: ## run tests quickly with the default Python
 	pytest
@@ -66,29 +81,123 @@ test-all: ## run tests on every Python version with tox
 	tox
 
 coverage: ## check code coverage quickly with the default Python
-	coverage run --source alethia -m pytest
-	coverage report -m
-	coverage html
+	pytest --cov=alethia --cov-report=html --cov-report=term
 	$(BROWSER) htmlcov/index.html
 
-docs: ## generate Sphinx HTML documentation, including API docs
-	rm -f docs/alethia.rst
-	rm -f docs/modules.rst
-	sphinx-apidoc -o docs/ alethia
-	$(MAKE) -C docs clean
-	$(MAKE) -C docs html
+docs: ## generate Sphinx HTML documentation with Furo theme
+	sphinx-build -b html docs docs/_build/html
+	@echo ""
+	@echo "Documentation built successfully!"
+	@echo "Location: docs/_build/html/"
+	@echo "Open docs/_build/html/index.html in your browser"
+
+docs-open: docs ## build docs and open in browser
 	$(BROWSER) docs/_build/html/index.html
 
-servedocs: docs ## compile the docs watching for changes
-	watchmedo shell-command -p '*.rst' -c '$(MAKE) -C docs html' -R -D .
+docs-serve: docs ## build docs and serve on localhost:8000
+	@echo "Serving documentation at http://localhost:8000"
+	@cd docs/_build/html && python -m http.server 8000
 
-release: dist ## package and upload a release
+servedocs: ## compile the docs watching for changes (requires sphinx-autobuild)
+	sphinx-autobuild docs docs/_build/html --watch alethia --open-browser
+
+dist: clean ## build source and wheel package
+	$(BUILD)
+	@echo ""
+	@echo "Distribution packages created:"
+	@ls -lh dist/
+
+install: ## install the package in editable mode
+	$(PIP) install -e .
+
+install-dev: ## install the package with dev dependencies
+	$(PIP) install -e ".[dev,test,docs]"
+
+install-full: ## install the package with all dependencies
+	$(PIP) install -e ".[full,dev,test,docs]"
+
+install-cpu: ## install the package with CPU dependencies
+	$(PIP) install -e ".[cpu,dev,test,docs]"
+
+install-gpu: ## install the package with GPU dependencies
+	$(PIP) install -e ".[gpu,dev,test,docs]"
+
+uninstall: ## uninstall the package
+	$(PIP) uninstall -y alethia
+
+sync: ## sync dependencies (uv only)
+ifdef UV
+	uv sync
+else
+	@echo "uv not found. Install with: pip install uv"
+	@echo "Or use: make install-dev"
+endif
+
+lock: ## lock dependencies (uv only)
+ifdef UV
+	uv lock
+else
+	@echo "uv not found. Install with: pip install uv"
+endif
+
+check-dist: dist ## check distribution files with twine
+	twine check dist/*
+
+release: dist check-dist ## package and upload a release to PyPI
+	@echo "Uploading to PyPI..."
 	twine upload dist/*
 
-dist: clean ## builds source and wheel package
-	python setup.py sdist
-	python setup.py bdist_wheel
-	ls -l dist
+release-test: dist check-dist ## package and upload a release to TestPyPI
+	@echo "Uploading to TestPyPI..."
+	twine upload --repository testpypi dist/*
 
-install: clean ## install the package to the active Python's site-packages
-	python setup.py install
+bump-patch: ## bump patch version (0.1.0 -> 0.1.1)
+ifdef UV
+	$(VERSION_BUMP) --bump patch
+	@echo "Version bumped to: $$(grep '^version = ' pyproject.toml | cut -d'"' -f2)"
+else
+	@echo "Current version: $$(grep '^version = ' pyproject.toml | cut -d'"' -f2)"
+	@echo "Install uv for automatic version bumping: pip install uv"
+	@echo "Or manually update version in pyproject.toml and HISTORY.rst"
+endif
+
+bump-minor: ## bump minor version (0.1.0 -> 0.2.0)
+ifdef UV
+	$(VERSION_BUMP) --bump minor
+	@echo "Version bumped to: $$(grep '^version = ' pyproject.toml | cut -d'"' -f2)"
+else
+	@echo "Current version: $$(grep '^version = ' pyproject.toml | cut -d'"' -f2)"
+	@echo "Install uv for automatic version bumping: pip install uv"
+	@echo "Or manually update version in pyproject.toml and HISTORY.rst"
+endif
+
+bump-major: ## bump major version (0.1.0 -> 1.0.0)
+ifdef UV
+	$(VERSION_BUMP) --bump major
+	@echo "Version bumped to: $$(grep '^version = ' pyproject.toml | cut -d'"' -f2)"
+else
+	@echo "Current version: $$(grep '^version = ' pyproject.toml | cut -d'"' -f2)"
+	@echo "Install uv for automatic version bumping: pip install uv"
+	@echo "Or manually update version in pyproject.toml and HISTORY.rst"
+endif
+
+version: ## show current version
+	@echo "Current version: $$(grep '^version = ' pyproject.toml | cut -d'"' -f2)"
+
+check: lint test ## run linting and tests
+
+pre-commit: format lint test ## run formatting, linting, and tests before commit
+
+show-tools: ## show which tools are being used
+	@echo "Package manager: $(PIP)"
+	@echo "Build tool: $(BUILD)"
+ifdef UV
+	@echo "uv version: $$(uv --version)"
+	@echo "✓ Using uv for fast operations"
+else
+	@echo "⚠ uv not found - using traditional tools"
+	@echo "Install uv for faster operations: pip install uv"
+endif
+	@echo ""
+	@echo "Python: $$(python --version)"
+	@echo "pip: $$(pip --version)"

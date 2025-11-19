@@ -12,7 +12,7 @@ Alethia helps you clean and standardize messy entity data (like location names, 
 leveraging semantic similarity and embedding visualizations.
 
 Installation
-===========
+============
 
 You can install alethia via pip:
 
@@ -34,10 +34,10 @@ For development installation:
 
 
 Quick Start
-==========
+===========
 
 Basic Entity Matching
---------------------
+---------------------
 
 .. code-block:: python
 
@@ -59,7 +59,7 @@ Basic Entity Matching
     print(corrected)
 
 Visualizing Entity Embeddings
-----------------------------
+-----------------------------
 
 .. code-block:: python
 
@@ -106,14 +106,14 @@ Features
 ========
 
 Entity Matching and Standardization
-----------------------------------
+-----------------------------------
 
 * Align messy entity names with a reference list of standardized entries
 * Based on semantic similarity using transformer embeddings
 * Handles typos, abbreviations, and other common data entry inconsistencies
 
 Embedding Analysis
-----------------
+------------------
 
 * Generate embeddings for text entities using state-of-the-art models
 * Reduce dimensionality with PCA or UMAP for visualization and analysis
@@ -126,7 +126,7 @@ Visualization
 * Compare different embedding projections
 
 Use Cases
-========
+=========
 
 * Standardizing location names across disparate datasets
 * Aligning entity records from multiple sources
@@ -138,6 +138,6 @@ License
 MIT
 
 Contributing
-===========
+============
 
 Contributions are welcome! Please feel free to submit a pull request.

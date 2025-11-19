@@ -286,9 +286,7 @@ def get_client(model_name: str = "ollama/gemma2:2b", api_key: str = None):
         return None
 
 
-def prompt_fuzzy_match(
-    prompt_matcher: instructor.client.Instructor, query: str, candidates: List[str]
-):
+def prompt_fuzzy_match(prompt_matcher: Any, query: str, candidates: List[str]):
     """Perform prompt-based fuzzy match using Instructor LLM client"""
     if not prompt_matcher:
         logger.warning("Prompt matcher requested but not configured")

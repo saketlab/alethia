@@ -22,6 +22,7 @@ from alethia.alethia import (
     run_rapidfuzz_matching,
     standard_matching,
 )
+from alethia.cpu_optimizations import get_cpu_runtime_hints
 
 
 # Test data fixtures
@@ -714,3 +715,70 @@ class TestPerformanceAttributes:
         captured = capsys.readouterr()
         # Should have some verbose output
         assert len(captured.out) > 0
+
+
+class DummyOptimizedModel:
+    def __init__(self, embedding_dim: int = 8) -> None:
+        self.embedding_dim = embedding_dim
+        self.batch_calls = []
+        self.cpu_optimization_config = {"batch_size": 128, "num_threads": None}
+
+    def encode(self, texts, batch_size: int = 32, **_: dict):
+        if isinstance(texts, str):
+            texts = [texts]
+        self.batch_calls.append(batch_size)
+        return np.ones((len(texts), self.embedding_dim), dtype=np.float32)
+
+
+class TestCPUOptimizationsIntegration:
+    """Test integration points for CPU optimization helpers"""
+
+    def test_cpu_runtime_hints_defaults(self):
+        hints = get_cpu_runtime_hints(object())
+        assert hints["batch_size"] == 64
+        assert hints["num_threads"] is None
+
+    def test_cpu_runtime_hints_custom(self):
+        class MockModel:
+            cpu_optimization_config = {"batch_size": 200, "num_threads": 2}
+
+        hints = get_cpu_runtime_hints(MockModel())
+        assert hints["batch_size"] == 200
+        assert hints["num_threads"] == 2
+
+    def test_optimized_batch_matching_respects_cpu_hint(
+        self, sample_dirty_entries, sample_reference_entries
+    ):
+        model = DummyOptimizedModel()
+        optimized_batch_matching(
+            sample_dirty_entries[:2],
+            sample_reference_entries[:2],
+            model,
+            backend="sentence-transformers",
+        )
+        assert model.batch_calls[0] == model.cpu_optimization_config["batch_size"]
+
+    @pytest.mark.skipif(
+        not check_optional_dependencies()["SENTENCE_TRANSFORMERS_AVAILABLE"],
+        reason="Sentence Transformers not available",
+    )
+    def test_load_sentence_transformer_model_uses_cpu_optimizer(self):
+        import importlib
+        import sys
+
+        alethia_module = sys.modules.get("alethia.alethia")
+        if alethia_module is None:
+            alethia_module = importlib.import_module("alethia.alethia")
+
+        sentinel = MagicMock(name="optimized_model")
+        with patch.object(
+            alethia_module, "get_cpu_optimized_model", return_value=sentinel
+        ) as mock_optimizer:
+            result = alethia_module.load_sentence_transformer_model(
+                "dummy/clinical-model",
+                force_cpu=True,
+                optimize_cpu=True,
+            )
+
+        assert result is sentinel
+        mock_optimizer.assert_called_once()

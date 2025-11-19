@@ -4,6 +4,11 @@ from typing import Any, Dict, List, Optional, Union
 import numpy as np
 from tqdm import tqdm
 
+from .alethia import (
+    load_sentence_transformer_model as core_load_sentence_transformer_model,
+)
+from .cpu_optimizations import cpu_thread_pool, get_cpu_runtime_hints
+
 # Import your existing dependencies from alethia.py
 try:
     from sentence_transformers import SentenceTransformer
@@ -148,20 +153,30 @@ def get_embeddings(
                 "For sentence-transformer type, model must be a string name or SentenceTransformer object"
             )
 
-        # Generate embeddings
+        hints = get_cpu_runtime_hints(model_obj)
+        batch_size = hints.get("batch_size") or 64
+        num_threads = hints.get("num_threads")
+
         if show_progress and len(texts_list) > 1:
             embeddings = []
-            for text in tqdm(texts_list, desc="Generating Embeddings"):
-                embedding = model_obj.encode(text)
-                embeddings.append(embedding)
+            with cpu_thread_pool(num_threads):
+                for text in tqdm(texts_list, desc="Generating Embeddings"):
+                    embedding = model_obj.encode(
+                        [text],
+                        batch_size=batch_size,
+                        show_progress_bar=False,
+                    )
+                    embeddings.append(np.asarray(embedding[0]))
             embeddings = np.stack(embeddings)
         else:
-            # Use batch encoding for efficiency
-            embeddings = model_obj.encode(
-                texts_list, show_progress_bar=show_progress and len(texts_list) > 10
-            )
+            with cpu_thread_pool(num_threads):
+                embeddings = model_obj.encode(
+                    texts_list,
+                    batch_size=batch_size,
+                    show_progress_bar=show_progress and len(texts_list) > 10,
+                )
             if len(texts_list) == 1:
-                embeddings = embeddings.reshape(1, -1)
+                embeddings = np.asarray(embeddings).reshape(1, -1)
             else:
                 embeddings = np.array(embeddings)
 
@@ -254,40 +269,15 @@ def _load_sentence_transformer_model(
         Loaded SentenceTransformer model
     """
     try:
-        import torch
-
-        # Determine device
-        if force_cpu or not torch.cuda.is_available():
-            device = "cpu"
-            if show_progress:
-                print(f"Loading {model_name} on CPU")
-        else:
-            device = "cuda"
-            if show_progress:
-                print(f"Loading {model_name} on GPU")
-
-        # Load model with error handling
-        try:
-            model = SentenceTransformer(
-                model_name, device=device, trust_remote_code=True, **kwargs
-            )
-            if show_progress:
-                print(f"✅ Successfully loaded {model_name}")
-            return model
-
-        except RuntimeError as e:
-            if "CUDA out of memory" in str(e) and not force_cpu:
-                if show_progress:
-                    print("⚠️ GPU memory error, trying CPU")
-                model = SentenceTransformer(
-                    model_name, device="cpu", trust_remote_code=True, **kwargs
-                )
-                if show_progress:
-                    print(f"✅ Successfully loaded {model_name} on CPU")
-                return model
-            else:
-                raise
-
+        model = core_load_sentence_transformer_model(
+            model_name,
+            force_cpu=force_cpu,
+            optimize_cpu=True,
+            **kwargs,
+        )
+        if show_progress:
+            print(f"✅ Successfully loaded {model_name}")
+        return model
     except Exception as e:
         logger.error(f"Failed to load SentenceTransformer model {model_name}: {e}")
         raise

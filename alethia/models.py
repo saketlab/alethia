@@ -687,3 +687,1186 @@ def get_model_recommendation(use_case: str, constraint: str = None) -> List[str]
         )
 
     return models
+
+
+def get_medical_models() -> Dict[str, Dict[str, Any]]:
+    """
+    Get curated list of biomedical/clinical embedding models suitable for medical NLP tasks.
+    All models have ≤8B parameters and are optimized for medical/clinical text processing.
+
+    Returns:
+        Dict[str, Dict[str, Any]]: Dictionary mapping model names to their detailed information
+    """
+    medical_models = {
+        # Small Language Models (SLMs) - Prioritized for efficiency
+        "NeuML/pubmedbert-base-embeddings": {
+            "organization": "NeuML",
+            "base_model": "microsoft/BiomedNLP-BiomedBERT-base-uncased-abstract-fulltext",
+            "size_category": "small",
+            "parameters": "109.5M",
+            "memory_gb": 0.4,
+            "embedding_dimension": 768,
+            "model_type": "sentence-transformer",
+            "training_data": "PubMed abstracts and full-text articles",
+            "strengths": [
+                "Purpose-built sentence-transformer architecture for biomedical retrieval",
+                "Optimized for medical terminology, disease names, and pathogens",
+                "Widely adopted across clinical chatbots and medical search systems",
+                "High quality embeddings for medical text",
+            ],
+            "use_cases": [
+                "Medical literature search",
+                "Clinical document similarity",
+                "Biomedical entity matching",
+                "SNOMED-ICD mapping",
+            ],
+            "benchmark_performance": {
+                "pubmed_qa": "95.62%",
+                "medical_text_similarity": "excellent",
+            },
+            "loading_method": "sentence-transformers",
+            "recommended": True,
+            "priority": 1,  # Highest priority - smallest and highly effective
+        },
+        "emilyalsentzer/Bio_ClinicalBERT": {
+            "organization": "emilyalsentzer",
+            "base_model": "BioBERT",
+            "size_category": "small",
+            "parameters": "110M",
+            "memory_gb": 0.4,
+            "embedding_dimension": 768,
+            "model_type": "transformer",
+            "training_data": "MIMIC-III clinical notes (880M words)",
+            "strengths": [
+                "Clinical notes specialization",
+                "EHR optimization",
+                "Well-established model",
+            ],
+            "use_cases": [
+                "Clinical notes processing",
+                "EHR text analysis",
+                "Clinical terminology matching",
+            ],
+            "loading_method": "transformers",
+            "recommended": True,
+            "priority": 2,
+        },
+        "medicalai/ClinicalBERT": {
+            "organization": "medicalai",
+            "base_model": "BERT",
+            "size_category": "small",
+            "parameters": "110M",
+            "memory_gb": 0.4,
+            "embedding_dimension": 768,
+            "model_type": "transformer",
+            "training_data": "1.2B words from diverse disease corpora + 3M patient EHR records",
+            "strengths": [
+                "Trained on large medical dataset (1.2B words)",
+                "Fine-tuned on 3M+ patient EHRs",
+                "Diverse disease corpora coverage",
+                "Masked language modeling pre-training",
+            ],
+            "use_cases": [
+                "Medical NLP tasks",
+                "Disease diagnosis assistance",
+                "Medical text analysis",
+                "Fill-mask operations in medical context",
+            ],
+            "loading_method": "transformers",
+            "recommended": True,
+            "priority": 2,
+        },
+        "pritamdeka/S-PubMedBert-MS-MARCO": {
+            "organization": "pritamdeka",
+            "base_model": "microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract-fulltext",
+            "size_category": "small",
+            "parameters": "110M",
+            "memory_gb": 0.4,
+            "embedding_dimension": 768,
+            "model_type": "sentence-transformer",
+            "training_data": "PubMed + MS-MARCO",
+            "strengths": [
+                "Information retrieval optimized",
+                "Medical domain + IR training",
+                "Sentence-transformer ready",
+            ],
+            "use_cases": [
+                "Medical information retrieval",
+                "Clinical document search",
+                "Biomedical Q&A",
+            ],
+            "loading_method": "sentence-transformers",
+            "recommended": True,
+            "priority": 2,
+        },
+        "FremyCompany/BioLORD-2023": {
+            "organization": "FremyCompany",
+            "base_model": "MPNet",
+            "size_category": "small",
+            "parameters": "109M",
+            "memory_gb": 0.4,
+            "embedding_dimension": 768,
+            "model_type": "sentence-transformer",
+            "training_data": "Biomedical datasets, EHR records",
+            "strengths": [
+                "Semantic search optimized",
+                "Clinical notes specialization",
+                "MPNet architecture efficiency",
+            ],
+            "use_cases": [
+                "EHR document processing",
+                "Clinical semantic search",
+                "Medical document clustering",
+            ],
+            "loading_method": "sentence-transformers",
+            "recommended": True,
+            "priority": 2,
+        },
+        "lokeshch19/ModernPubMedBERT": {
+            "organization": "lokeshch19",
+            "base_model": "PubMedBERT",
+            "size_category": "small",
+            "parameters": "149M",
+            "memory_gb": 0.6,
+            "embedding_dimension": 768,
+            "model_type": "sentence-transformer",
+            "training_data": "PubMed title-abstract pairs with InfoNCE",
+            "strengths": [
+                "Modern contrastive learning",
+                "Long context (2048 tokens)",
+                "Enhanced medical concept understanding",
+                "Superior medical vs non-medical discrimination",
+            ],
+            "use_cases": [
+                "Medical document similarity",
+                "Long clinical documents",
+                "Medical concept clustering",
+            ],
+            "loading_method": "sentence-transformers",
+            "recommended": True,
+            "priority": 2,
+        },
+        "UFNLP/gatortron-base": {
+            "organization": "UFNLP",
+            "base_model": "BERT-Megatron",
+            "size_category": "medium",
+            "parameters": "345M",
+            "memory_gb": 1.4,
+            "embedding_dimension": 768,
+            "model_type": "transformer",
+            "training_data": "82B words clinical notes + PubMed + WikiText",
+            "strengths": [
+                "Massive clinical training data",
+                "MIMIC-III + PubMed",
+                "Strong clinical NLP performance",
+            ],
+            "use_cases": [
+                "Clinical NER",
+                "Relation extraction",
+                "Clinical text understanding",
+            ],
+            "loading_method": "transformers",
+            "recommended": True,
+            "priority": 3,
+        },
+        "microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract-fulltext": {
+            "organization": "microsoft",
+            "base_model": "BERT",
+            "size_category": "small",
+            "parameters": "110M",
+            "memory_gb": 0.4,
+            "embedding_dimension": 768,
+            "model_type": "transformer",
+            "training_data": "PubMed abstracts and full-text",
+            "strengths": [
+                "Domain-specific vocabulary",
+                "Pre-trained from scratch on biomedical text",
+                "Top BLURB benchmark performance",
+            ],
+            "use_cases": [
+                "Biomedical NLP tasks",
+                "Medical text classification",
+                "Base model for fine-tuning",
+            ],
+            "loading_method": "transformers",
+            "recommended": True,
+            "priority": 2,
+        },
+        "gsarti/biobert-nli": {
+            "organization": "gsarti",
+            "base_model": "BioBERT",
+            "size_category": "small",
+            "parameters": "110M",
+            "memory_gb": 0.4,
+            "embedding_dimension": 768,
+            "model_type": "sentence-transformer",
+            "training_data": "BioBERT + SNLI + MultiNLI",
+            "strengths": [
+                "NLI fine-tuning for better sentence embeddings",
+                "Universal sentence embeddings",
+                "Biomedical domain knowledge",
+            ],
+            "use_cases": [
+                "Sentence similarity",
+                "Semantic textual similarity",
+                "Medical paraphrase detection",
+            ],
+            "loading_method": "sentence-transformers",
+            "recommended": True,
+            "priority": 2,
+        },
+        "cambridgeltl/SapBERT-from-PubMedBERT-fulltext": {
+            "organization": "cambridgeltl",
+            "base_model": "PubMedBERT",
+            "size_category": "small",
+            "parameters": "110M",
+            "memory_gb": 0.4,
+            "embedding_dimension": 768,
+            "model_type": "sentence-transformer",
+            "training_data": "PubMedBERT + UMLS (self-alignment pretraining)",
+            "strengths": [
+                "Self-alignment pretraining on UMLS",
+                "Optimized for medical entity linking",
+                "Strong biomedical entity representation",
+                "Specialized for SNOMED/ICD mapping tasks",
+            ],
+            "use_cases": [
+                "Medical entity linking",
+                "SNOMED-ICD mapping",
+                "Biomedical entity normalization",
+                "Clinical terminology alignment",
+            ],
+            "loading_method": "sentence-transformers",
+            "recommended": True,
+            "priority": 1,  # High priority for entity mapping tasks
+        },
+        "sentence-transformers/embeddinggemma-300m-medical": {
+            "organization": "sentence-transformers",
+            "base_model": "Google EmbeddingGemma",
+            "size_category": "medium",
+            "parameters": "302.9M",
+            "memory_gb": 1.2,
+            "embedding_dimension": 1024,
+            "model_type": "sentence-transformer",
+            "training_data": "MIRIAD medical dataset (100K samples) with CachedMultipleNegativesRankingLoss",
+            "strengths": [
+                "Medical-specific fine-tune of EmbeddingGemma",
+                "Modern architecture with active maintenance",
+                "Optimized for clinical terminology and retrieval",
+            ],
+            "use_cases": [
+                "Clinical semantic search",
+                "Medical terminology retrieval",
+                "Biomedical question answering",
+                "Modern clinical AI applications",
+            ],
+            "loading_method": "sentence-transformers",
+            "recommended": True,
+            "priority": 2,
+        },
+        "pritamdeka/BioBERT-mnli-snli-scinli-scitail-mednli-stsb": {
+            "organization": "pritamdeka",
+            "base_model": "BioBERT",
+            "size_category": "small",
+            "parameters": "110M",
+            "memory_gb": 0.4,
+            "embedding_dimension": 768,
+            "model_type": "sentence-transformer",
+            "training_data": "BioBERT fine-tuned on MNLI, SNLI, SciNLI, SciTail, MedNLI, and STS-B",
+            "strengths": [
+                "Biomedical sentence-transformer optimized for semantic similarity",
+                "Trained on medical NLI datasets including MedNLI",
+                "Strong cross-domain generalization within biomedical text",
+            ],
+            "use_cases": [
+                "Disease and symptom similarity",
+                "Clinical paraphrase detection",
+                "Medical terminology alignment",
+                "Biomedical sentence inference",
+            ],
+            "loading_method": "sentence-transformers",
+            "recommended": True,
+            "priority": 2,
+        },
+        "menadsa/S-Bio_ClinicalBERT": {
+            "organization": "menadsa",
+            "base_model": "Bio_ClinicalBERT",
+            "size_category": "small",
+            "parameters": "110M",
+            "memory_gb": 0.4,
+            "embedding_dimension": 768,
+            "model_type": "sentence-transformer",
+            "training_data": "Clinical notes from electronic health records",
+            "strengths": [
+                "Optimized for semantic similarity on clinical documentation",
+                "Captures clinical abbreviations and shorthand",
+                "Retains Bio_ClinicalBERT knowledge with sentence-transformer pooling",
+            ],
+            "use_cases": [
+                "Clinical note similarity",
+                "Treatment and procedure comparison",
+                "EHR semantic search",
+                "Care pathway clustering",
+            ],
+            "loading_method": "sentence-transformers",
+            "recommended": True,
+            "priority": 2,
+        },
+        "pritamdeka/SapBERT-mnli-snli-scinli-scitail-mednli-stsb": {
+            "organization": "pritamdeka",
+            "base_model": "SapBERT",
+            "size_category": "small",
+            "parameters": "110M",
+            "memory_gb": 0.4,
+            "embedding_dimension": 768,
+            "model_type": "sentence-transformer",
+            "training_data": "SapBERT fine-tuned on MNLI, SNLI, SciNLI, SciTail, MedNLI, and STS-B",
+            "strengths": [
+                "Combines entity linking strength of SapBERT with sentence-level supervision",
+                "Excels at medical synonym matching and semantic similarity",
+                "Supports both entity-level and sentence-level embeddings",
+            ],
+            "use_cases": [
+                "Medical entity linking",
+                "Clinical terminology normalization",
+                "Biomedical semantic search",
+                "Ontology-aware similarity",
+            ],
+            "loading_method": "sentence-transformers",
+            "recommended": True,
+            "priority": 1,
+        },
+        "dmis-lab/biosyn-sapbert-bc5cdr-disease": {
+            "organization": "dmis-lab",
+            "base_model": "SapBERT",
+            "size_category": "small",
+            "parameters": "109M",
+            "memory_gb": 0.4,
+            "embedding_dimension": 768,
+            "model_type": "sentence-transformer",
+            "training_data": "BioSyn SapBERT fine-tuned on BC5CDR disease corpus",
+            "strengths": [
+                "Specialized for disease entity embedding and normalization",
+                "High accuracy on disease mention detection tasks",
+                "Maintains SapBERT alignment across medical vocabularies",
+            ],
+            "use_cases": [
+                "Disease mention normalization",
+                "Medical ontology mapping",
+                "Clinical diagnosis clustering",
+                "Disease terminology search",
+            ],
+            "loading_method": "sentence-transformers",
+            "recommended": True,
+            "priority": 1,
+        },
+        "microsoft/BiomedNLP-KRISSBERT-PubMed-UMLS-EL": {
+            "organization": "microsoft",
+            "base_model": "KRISSBERT",
+            "size_category": "small",
+            "parameters": "110M",
+            "memory_gb": 0.4,
+            "embedding_dimension": 768,
+            "model_type": "transformer",
+            "training_data": "PubMed literature combined with UMLS knowledge-rich synonym sets",
+            "strengths": [
+                "Designed for biomedical entity linking with UMLS integration",
+                "Captures synonym sets across standardized medical vocabularies",
+                "Strong performance on concept normalization tasks",
+            ],
+            "use_cases": [
+                "UMLS and SNOMED concept linking",
+                "Medical terminology normalization",
+                "Clinical knowledge graph integration",
+            ],
+            "loading_method": "transformers",
+            "recommended": True,
+            "priority": 1,
+        },
+        "dmis-lab/biobert-v1.1": {
+            "organization": "dmis-lab",
+            "base_model": "BERT",
+            "size_category": "small",
+            "parameters": "110M",
+            "memory_gb": 0.4,
+            "embedding_dimension": 768,
+            "model_type": "transformer",
+            "training_data": "PubMed abstracts and PMC full-text articles",
+            "strengths": [
+                "Original BioBERT pretrained on large biomedical corpora",
+                "Widely validated baseline for biomedical NLP",
+                "Strong foundation for task-specific fine-tuning",
+            ],
+            "use_cases": [
+                "Feature extraction for biomedical tasks",
+                "Baseline biomedical embeddings",
+                "Domain-specific fine-tuning",
+            ],
+            "loading_method": "transformers",
+            "recommended": True,
+            "priority": 2,
+        },
+        "dmis-lab/biobert-base-cased-v1.1": {
+            "organization": "dmis-lab",
+            "base_model": "BERT",
+            "size_category": "small",
+            "parameters": "110M",
+            "memory_gb": 0.4,
+            "embedding_dimension": 768,
+            "model_type": "transformer",
+            "training_data": "PubMed abstracts and PMC full-text articles (cased)",
+            "strengths": [
+                "Preserves capitalization for medical acronyms and names",
+                "Reliable biomedical baseline",
+                "Supports case-sensitive terminology matching",
+            ],
+            "use_cases": [
+                "Medical acronym resolution",
+                "Case-sensitive terminology extraction",
+                "Biomedical classification tasks",
+            ],
+            "loading_method": "transformers",
+            "recommended": True,
+            "priority": 2,
+        },
+        "dmis-lab/biobert-base-cased-v1.2": {
+            "organization": "dmis-lab",
+            "base_model": "BERT",
+            "size_category": "small",
+            "parameters": "110M",
+            "memory_gb": 0.4,
+            "embedding_dimension": 768,
+            "model_type": "transformer",
+            "training_data": "Updated BioBERT cased pre-training on PubMed and PMC",
+            "strengths": [
+                "Improved training procedure over v1.1",
+                "Maintains case sensitivity for medical abbreviations",
+                "Strong baseline for biomedical downstream tasks",
+            ],
+            "use_cases": [
+                "Biomedical text classification",
+                "Terminology preservation",
+                "Fine-tuning for clinical NLP",
+            ],
+            "loading_method": "transformers",
+            "recommended": True,
+            "priority": 2,
+        },
+        "dmis-lab/biobert-large-cased-v1.1": {
+            "organization": "dmis-lab",
+            "base_model": "BERT",
+            "size_category": "medium",
+            "parameters": "340M",
+            "memory_gb": 1.3,
+            "embedding_dimension": 1024,
+            "model_type": "transformer",
+            "training_data": "PubMed abstracts and PMC full-text articles",
+            "strengths": [
+                "Higher capacity BioBERT for complex medical semantics",
+                "Improved performance on nuanced biomedical relationships",
+                "Handles multi-concept medical contexts",
+            ],
+            "use_cases": [
+                "Advanced biomedical reasoning",
+                "Complex entity relationship modeling",
+                "High-accuracy medical NLP",
+            ],
+            "loading_method": "transformers",
+            "recommended": True,
+            "priority": 3,
+        },
+        "microsoft/BiomedNLP-BiomedBERT-base-uncased-abstract-fulltext": {
+            "organization": "microsoft",
+            "base_model": "BiomedBERT",
+            "size_category": "small",
+            "parameters": "110M",
+            "memory_gb": 0.4,
+            "embedding_dimension": 768,
+            "model_type": "transformer",
+            "training_data": "PubMed abstracts and PMC full-text articles",
+            "strengths": [
+                "Trained from scratch on biomedical literature",
+                "Comprehensive coverage of medical terminology",
+                "Strong performance across biomedical benchmarks",
+            ],
+            "use_cases": [
+                "Biomedical NLP tasks",
+                "Medical text classification",
+                "Base model for fine-tuning",
+            ],
+            "loading_method": "transformers",
+            "recommended": True,
+            "priority": 2,
+        },
+        "microsoft/BiomedNLP-BiomedBERT-base-uncased-abstract": {
+            "organization": "microsoft",
+            "base_model": "BiomedBERT",
+            "size_category": "small",
+            "parameters": "110M",
+            "memory_gb": 0.4,
+            "embedding_dimension": 768,
+            "model_type": "transformer",
+            "training_data": "PubMed abstracts",
+            "strengths": [
+                "Faster training focus on abstract-level terminology",
+                "Maintains strong biomedical vocabulary coverage",
+                "Efficient base for biomedical tasks",
+            ],
+            "use_cases": [
+                "Abstract-focused biomedical analysis",
+                "Medical concept extraction",
+                "Fine-tuning for lightweight biomedical models",
+            ],
+            "loading_method": "transformers",
+            "recommended": True,
+            "priority": 2,
+        },
+        "microsoft/BiomedNLP-BiomedBERT-large-uncased-abstract": {
+            "organization": "microsoft",
+            "base_model": "BiomedBERT",
+            "size_category": "medium",
+            "parameters": "340M",
+            "memory_gb": 1.3,
+            "embedding_dimension": 1024,
+            "model_type": "transformer",
+            "training_data": "PubMed abstracts",
+            "strengths": [
+                "Higher capacity embeddings for complex biomedical relationships",
+                "Improved performance on rare terminology",
+                "Supports nuanced biomedical inference",
+            ],
+            "use_cases": [
+                "Advanced biomedical understanding",
+                "Rare disease terminology modeling",
+                "High-accuracy biomedical search",
+            ],
+            "loading_method": "transformers",
+            "recommended": True,
+            "priority": 3,
+        },
+        "nlpie/distil-clinicalbert": {
+            "organization": "nlpie",
+            "base_model": "Bio_ClinicalBERT",
+            "size_category": "tiny",
+            "parameters": "66M",
+            "memory_gb": 0.25,
+            "embedding_dimension": 768,
+            "model_type": "transformer",
+            "training_data": "Distilled ClinicalBERT trained on clinical EHR corpora",
+            "strengths": [
+                "Efficient clinical embeddings with reduced footprint",
+                "Retains key clinical terminology understanding",
+                "Suitable for latency-sensitive deployments",
+            ],
+            "use_cases": [
+                "Real-time clinical text processing",
+                "Resource-constrained medical applications",
+                "Clinical similarity search at scale",
+            ],
+            "loading_method": "transformers",
+            "recommended": True,
+            "priority": 2,
+        },
+        "nlpie/tiny-clinicalbert": {
+            "organization": "nlpie",
+            "base_model": "Bio_ClinicalBERT",
+            "size_category": "tiny",
+            "parameters": "30M",
+            "memory_gb": 0.1,
+            "embedding_dimension": 312,
+            "model_type": "transformer",
+            "training_data": "Tiny ClinicalBERT distilled from Bio_ClinicalBERT for EHR data",
+            "strengths": [
+                "Ultra-compact clinical model for edge and mobile scenarios",
+                "Maintains core clinical vocabulary understanding",
+                "Very fast inference for streaming workloads",
+            ],
+            "use_cases": [
+                "Edge deployment of clinical NLP",
+                "High-throughput clinical document embedding",
+                "Latency-critical healthcare applications",
+            ],
+            "loading_method": "transformers",
+            "recommended": True,
+            "priority": 1,
+        },
+        "bionlp/bluebert_pubmed_mimic_uncased_L-12_H-768_A-12": {
+            "organization": "bionlp",
+            "base_model": "BlueBERT",
+            "size_category": "small",
+            "parameters": "110M",
+            "memory_gb": 0.4,
+            "embedding_dimension": 768,
+            "model_type": "transformer",
+            "training_data": "PubMed abstracts combined with MIMIC-III clinical notes",
+            "strengths": [
+                "Bridges biomedical literature and clinical documentation",
+                "Captures terminology across research and practice",
+                "Reliable dual-domain embeddings",
+            ],
+            "use_cases": [
+                "Cross-domain medical text analysis",
+                "Clinical and literature terminology alignment",
+                "Biomedical search spanning multiple sources",
+            ],
+            "loading_method": "transformers",
+            "recommended": True,
+            "priority": 2,
+        },
+        "bionlp/bluebert_pubmed_uncased_L-12_H-768_A-12": {
+            "organization": "bionlp",
+            "base_model": "BlueBERT",
+            "size_category": "small",
+            "parameters": "110M",
+            "memory_gb": 0.4,
+            "embedding_dimension": 768,
+            "model_type": "transformer",
+            "training_data": "PubMed abstracts",
+            "strengths": [
+                "Focused on biomedical literature terminology",
+                "Good baseline for research text embeddings",
+                "Maintains BlueBERT efficiency",
+            ],
+            "use_cases": [
+                "Biomedical literature search",
+                "Scientific terminology embedding",
+                "Research paper similarity",
+            ],
+            "loading_method": "transformers",
+            "recommended": True,
+            "priority": 2,
+        },
+        "bionlp/bluebert_pubmed_mimic_uncased_L-24_H-1024_A-16": {
+            "organization": "bionlp",
+            "base_model": "BlueBERT",
+            "size_category": "medium",
+            "parameters": "340M",
+            "memory_gb": 1.3,
+            "embedding_dimension": 1024,
+            "model_type": "transformer",
+            "training_data": "PubMed abstracts and MIMIC-III clinical notes",
+            "strengths": [
+                "Large dual-domain model with 1024-d embeddings",
+                "Superior capacity for complex medical relationships",
+                "Handles detailed clinical and research terminology",
+            ],
+            "use_cases": [
+                "High-accuracy cross-domain retrieval",
+                "Comprehensive medical concept representation",
+                "Advanced clinical decision support",
+            ],
+            "loading_method": "transformers",
+            "recommended": True,
+            "priority": 3,
+        },
+        "bionlp/bluebert_pubmed_uncased_L-24_H-1024_A-16": {
+            "organization": "bionlp",
+            "base_model": "BlueBERT",
+            "size_category": "medium",
+            "parameters": "340M",
+            "memory_gb": 1.3,
+            "embedding_dimension": 1024,
+            "model_type": "transformer",
+            "training_data": "PubMed abstracts",
+            "strengths": [
+                "Large-capacity model for biomedical literature",
+                "Improved performance on nuanced scientific terminology",
+                "Provides 1024-d dimension embeddings",
+            ],
+            "use_cases": [
+                "Detailed biomedical literature analysis",
+                "Complex terminology retrieval",
+                "Research-focused semantic search",
+            ],
+            "loading_method": "transformers",
+            "recommended": True,
+            "priority": 3,
+        },
+        "allenai/scibert_scivocab_uncased": {
+            "organization": "allenai",
+            "base_model": "SciBERT",
+            "size_category": "small",
+            "parameters": "110M",
+            "memory_gb": 0.4,
+            "embedding_dimension": 768,
+            "model_type": "transformer",
+            "training_data": "1.14M Semantic Scholar papers (82% biomedical, 18% CS)",
+            "strengths": [
+                "Scientific vocabulary tailored for technical terminology",
+                "Strong performance on biomedical literature",
+                "Widely adopted scientific baseline",
+            ],
+            "use_cases": [
+                "Biomedical literature understanding",
+                "Scientific document embedding",
+                "Medical concept extraction in research papers",
+            ],
+            "loading_method": "transformers",
+            "recommended": True,
+            "priority": 3,
+        },
+        "allenai/scibert_scivocab_cased": {
+            "organization": "allenai",
+            "base_model": "SciBERT",
+            "size_category": "small",
+            "parameters": "110M",
+            "memory_gb": 0.4,
+            "embedding_dimension": 768,
+            "model_type": "transformer",
+            "training_data": "1.14M Semantic Scholar papers with cased vocabulary",
+            "strengths": [
+                "Preserves capitalization for scientific acronyms and names",
+                "Handles biomedical terminology with case sensitivity",
+                "Strong baseline for scientific NLP",
+            ],
+            "use_cases": [
+                "Case-sensitive biomedical text analysis",
+                "Scientific acronym handling",
+                "Research literature semantic search",
+            ],
+            "loading_method": "transformers",
+            "recommended": True,
+            "priority": 3,
+        },
+        "heycao/scibert_scivocab_cased_sentence": {
+            "organization": "heycao",
+            "base_model": "SciBERT",
+            "size_category": "small",
+            "parameters": "109.9M",
+            "memory_gb": 0.4,
+            "embedding_dimension": 768,
+            "model_type": "sentence-transformer",
+            "training_data": "SciBERT fine-tuned for sentence embeddings (2025)",
+            "strengths": [
+                "Sentence-transformer optimized SciBERT",
+                "Maintains scientific vocabulary while improving sentence pooling",
+                "Recent model tuned for scientific sentence similarity",
+            ],
+            "use_cases": [
+                "Biomedical sentence similarity",
+                "Scientific abstract retrieval",
+                "Medical fact alignment",
+            ],
+            "loading_method": "sentence-transformers",
+            "recommended": True,
+            "priority": 2,
+        },
+        "bvanaken/CORe-clinical-outcome-biobert-v1": {
+            "organization": "bvanaken",
+            "base_model": "BioBERT",
+            "size_category": "small",
+            "parameters": "108.3M",
+            "memory_gb": 0.4,
+            "embedding_dimension": 768,
+            "model_type": "sentence-transformer",
+            "training_data": "Clinical outcome representations with patient trajectories",
+            "strengths": [
+                "Captures clinical outcomes and temporal signals",
+                "Designed for patient trajectory understanding",
+                "Retains biomedical vocabulary from BioBERT",
+            ],
+            "use_cases": [
+                "Outcome prediction feature extraction",
+                "Patient similarity analysis",
+                "Clinical cohort discovery",
+            ],
+            "loading_method": "sentence-transformers",
+            "recommended": True,
+            "priority": 2,
+        },
+        "pritamdeka/S-Scibert-snli-multinli-stsb": {
+            "organization": "pritamdeka",
+            "base_model": "SciBERT",
+            "size_category": "small",
+            "parameters": "110M",
+            "memory_gb": 0.4,
+            "embedding_dimension": 768,
+            "model_type": "sentence-transformer",
+            "training_data": "SciBERT fine-tuned on SNLI, MultiNLI, and STS-B",
+            "strengths": [
+                "Sentence-transformer variant of SciBERT",
+                "Improved semantic similarity for scientific text",
+                "Balances biomedical and scientific coverage",
+            ],
+            "use_cases": [
+                "Scientific sentence similarity",
+                "Biomedical literature matching",
+                "Research paraphrase detection",
+            ],
+            "loading_method": "sentence-transformers",
+            "recommended": True,
+            "priority": 2,
+        },
+        "pritamdeka/S-Bluebert-snli-multinli-stsb": {
+            "organization": "pritamdeka",
+            "base_model": "BlueBERT",
+            "size_category": "small",
+            "parameters": "110M",
+            "memory_gb": 0.4,
+            "embedding_dimension": 768,
+            "model_type": "sentence-transformer",
+            "training_data": "BlueBERT fine-tuned on SNLI, MultiNLI, and STS-B",
+            "strengths": [
+                "Sentence-transformer optimized BlueBERT",
+                "Handles both clinical and biomedical literature",
+                "Good balance of efficiency and quality",
+            ],
+            "use_cases": [
+                "Clinical sentence similarity",
+                "Cross-domain medical retrieval",
+                "Terminology alignment across sources",
+            ],
+            "loading_method": "sentence-transformers",
+            "recommended": True,
+            "priority": 2,
+        },
+        "pritamdeka/S-Biomed-Roberta-snli-multinli-stsb": {
+            "organization": "pritamdeka",
+            "base_model": "BioMed-RoBERTa",
+            "size_category": "small",
+            "parameters": "125M",
+            "memory_gb": 0.5,
+            "embedding_dimension": 768,
+            "model_type": "sentence-transformer",
+            "training_data": "BioMed-RoBERTa fine-tuned on SNLI, MultiNLI, and STS-B",
+            "strengths": [
+                "RoBERTa-based biomedical sentence transformer",
+                "Strong semantic similarity performance",
+                "Robust to varied scientific phrasing",
+            ],
+            "use_cases": [
+                "Biomedical semantic similarity",
+                "Scientific fact retrieval",
+                "Medical knowledge base construction",
+            ],
+            "loading_method": "sentence-transformers",
+            "recommended": True,
+            "priority": 2,
+        },
+        "NeuML/pubmedbert-base-embeddings-matryoshka": {
+            "organization": "NeuML",
+            "base_model": "microsoft/BiomedNLP-BiomedBERT-base-uncased-abstract-fulltext",
+            "size_category": "small",
+            "parameters": "109.5M",
+            "memory_gb": 0.4,
+            "embedding_dimension": 768,
+            "model_type": "sentence-transformer",
+            "training_data": "PubMed abstracts and full-text articles",
+            "strengths": [
+                "Matryoshka representation learning for variable embedding sizes",
+                "Flexible dimensionality (768 down to 64)",
+                "Maintains medical retrieval performance across dimensions",
+            ],
+            "use_cases": [
+                "Resource-constrained medical deployments",
+                "Multi-resolution medical search",
+                "Clinical applications needing adjustable embedding size",
+            ],
+            "loading_method": "sentence-transformers",
+            "recommended": True,
+            "priority": 1,
+        },
+        "pritamdeka/PubMedBERT-mnli-snli-scinli-scitail-mednli-stsb": {
+            "organization": "pritamdeka",
+            "base_model": "PubMedBERT",
+            "size_category": "small",
+            "parameters": "110M",
+            "memory_gb": 0.4,
+            "embedding_dimension": 768,
+            "model_type": "sentence-transformer",
+            "training_data": "PubMedBERT fine-tuned on MNLI, SNLI, SciNLI, SciTail, MedNLI, and STS-B",
+            "strengths": [
+                "Medical sentence embeddings built on PubMedBERT",
+                "Combines biomedical literature and inference supervision",
+                "Strong at medical concept similarity",
+            ],
+            "use_cases": [
+                "Medical semantic similarity",
+                "Clinical question answering",
+                "Biomedical document clustering",
+            ],
+            "loading_method": "sentence-transformers",
+            "recommended": True,
+            "priority": 2,
+        },
+        "pritamdeka/S-PubMedBert-MS-MARCO-SCIFACT": {
+            "organization": "pritamdeka",
+            "base_model": "PubMedBERT",
+            "size_category": "small",
+            "parameters": "110M",
+            "memory_gb": 0.4,
+            "embedding_dimension": 768,
+            "model_type": "sentence-transformer",
+            "training_data": "PubMedBERT fine-tuned on MS MARCO and SciFact",
+            "strengths": [
+                "Combines biomedical retrieval and scientific fact verification",
+                "Optimized for medical information retrieval",
+                "Maintains strong semantic alignment",
+            ],
+            "use_cases": [
+                "Biomedical information retrieval",
+                "Scientific fact checking",
+                "Medical literature search",
+            ],
+            "loading_method": "sentence-transformers",
+            "recommended": True,
+            "priority": 2,
+        },
+        "sentence-transformers/all-MiniLM-L6-v2": {
+            "organization": "sentence-transformers",
+            "base_model": "MiniLM",
+            "size_category": "tiny",
+            "parameters": "22.7M",
+            "memory_gb": 0.1,
+            "embedding_dimension": 384,
+            "model_type": "sentence-transformer",
+            "training_data": "Diverse multi-domain corpus including scientific literature",
+            "strengths": [
+                "Extremely fast and lightweight",
+                "Surprisingly strong performance on medical text",
+                "Ideal baseline for resource-constrained settings",
+            ],
+            "use_cases": [
+                "Baseline medical embedding",
+                "High-throughput clinical text processing",
+                "Edge deployments and rapid prototyping",
+            ],
+            "loading_method": "sentence-transformers",
+            "recommended": True,
+            "priority": 3,
+        },
+        "sentence-transformers/all-MiniLM-L12-v2": {
+            "organization": "sentence-transformers",
+            "base_model": "MiniLM",
+            "size_category": "tiny",
+            "parameters": "33.4M",
+            "memory_gb": 0.15,
+            "embedding_dimension": 384,
+            "model_type": "sentence-transformer",
+            "training_data": "Diverse multi-domain corpus including scientific literature",
+            "strengths": [
+                "Improved quality over L6 while remaining efficient",
+                "Good general-purpose medical applicability",
+                "Fast inference with minimal resources",
+            ],
+            "use_cases": [
+                "Clinical similarity at scale",
+                "Medical chatbot retrieval",
+                "Prototype biomedical search systems",
+            ],
+            "loading_method": "sentence-transformers",
+            "recommended": True,
+            "priority": 3,
+        },
+        "sentence-transformers/all-mpnet-base-v2": {
+            "organization": "sentence-transformers",
+            "base_model": "MPNet",
+            "size_category": "small",
+            "parameters": "109.5M",
+            "memory_gb": 0.4,
+            "embedding_dimension": 768,
+            "model_type": "sentence-transformer",
+            "training_data": "Large-scale sentence embedding corpus including scientific domains",
+            "strengths": [
+                "High-quality general-purpose embeddings",
+                "Strong baseline for medical semantic similarity",
+                "Well-tested and widely available",
+            ],
+            "use_cases": [
+                "Medical document clustering",
+                "Clinical question answering",
+                "Biomedical semantic search",
+            ],
+            "loading_method": "sentence-transformers",
+            "recommended": True,
+            "priority": 3,
+        },
+        "sentence-transformers/multi-qa-mpnet-base-dot-v1": {
+            "organization": "sentence-transformers",
+            "base_model": "MPNet",
+            "size_category": "small",
+            "parameters": "109.5M",
+            "memory_gb": 0.4,
+            "embedding_dimension": 768,
+            "model_type": "sentence-transformer",
+            "training_data": "Multi-dataset QA corpus optimized for dot-product retrieval",
+            "strengths": [
+                "Excellent for question-answer retrieval",
+                "Performs well on medical QA benchmarks",
+                "Optimized for dot-product similarity",
+            ],
+            "use_cases": [
+                "Medical FAQ systems",
+                "Clinical question retrieval",
+                "Healthcare knowledge base search",
+            ],
+            "loading_method": "sentence-transformers",
+            "recommended": True,
+            "priority": 3,
+        },
+        "sentence-transformers/msmarco-distilbert-base-v4": {
+            "organization": "sentence-transformers",
+            "base_model": "DistilBERT",
+            "size_category": "tiny",
+            "parameters": "66.4M",
+            "memory_gb": 0.25,
+            "embedding_dimension": 768,
+            "model_type": "sentence-transformer",
+            "training_data": "MS MARCO passage ranking dataset",
+            "strengths": [
+                "Efficient information retrieval model",
+                "Balances speed and quality",
+                "Performs well for medical semantic search",
+            ],
+            "use_cases": [
+                "Medical information retrieval",
+                "Clinical knowledge base search",
+                "High-volume medical document indexing",
+            ],
+            "loading_method": "sentence-transformers",
+            "recommended": True,
+            "priority": 3,
+        },
+        "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2": {
+            "organization": "sentence-transformers",
+            "base_model": "MiniLM",
+            "size_category": "small",
+            "parameters": "117.7M",
+            "memory_gb": 0.45,
+            "embedding_dimension": 384,
+            "model_type": "sentence-transformer",
+            "training_data": "Multilingual paraphrase corpus covering 50+ languages",
+            "strengths": [
+                "Multilingual coverage for international medical text",
+                "Efficient embeddings for cross-lingual tasks",
+                "Handles medical terminology in many languages",
+            ],
+            "use_cases": [
+                "Multilingual medical terminology search",
+                "Cross-lingual clinical applications",
+                "Global healthcare chatbot systems",
+            ],
+            "loading_method": "sentence-transformers",
+            "recommended": True,
+            "priority": 3,
+        },
+    }
+
+    return medical_models
+
+
+def print_medical_models_guide():
+    """
+    Print a comprehensive guide of available medical/clinical embedding models.
+    """
+    print("🏥 Medical & Clinical Embedding Models Guide")
+    print("=" * 80)
+    print(
+        "All models have ≤8B parameters and are optimized for medical/clinical text.\n"
+    )
+
+    models = get_medical_models()
+
+    # Group by priority
+    priority_groups = {}
+    for model_name, info in models.items():
+        priority = info.get("priority", 99)
+        if priority not in priority_groups:
+            priority_groups[priority] = []
+        priority_groups[priority].append((model_name, info))
+
+    for priority in sorted(priority_groups.keys()):
+        print(f"\n{'='*80}")
+        if priority == 1:
+            print("⭐ HIGHEST PRIORITY - Small Language Models (SLMs)")
+            print("   Smallest models with excellent performance - try these first!")
+        elif priority == 2:
+            print("⭐ RECOMMENDED - Efficient Medical Models")
+            print("   Well-established models with proven performance")
+        elif priority == 3:
+            print("⭐ ADVANCED - Larger Models")
+            print("   More parameters, potentially better for complex tasks")
+        print("=" * 80)
+
+        for model_name, info in priority_groups[priority]:
+            print(f"\n📊 {model_name}")
+            print(f"   Organization: {info['organization']}")
+            print(f"   Base: {info['base_model']}")
+            print(
+                f"   Size: {info['parameters']} parameters | {info['memory_gb']} GB memory | {info['embedding_dimension']} dimensions"
+            )
+            print(f"   Type: {info['model_type']}")
+            print(f"   Training: {info['training_data']}")
+
+            print("   ✓ Strengths:")
+            for strength in info["strengths"]:
+                print(f"     • {strength}")
+
+            print("   🎯 Use Cases:")
+            for use_case in info["use_cases"]:
+                print(f"     • {use_case}")
+
+            print(f"   📦 Load with: {info['loading_method']}")
+
+            if "benchmark_performance" in info:
+                print("   📈 Benchmarks:")
+                for bench, score in info["benchmark_performance"].items():
+                    print(f"     • {bench}: {score}")
+
+    print("\n" + "=" * 80)
+    print("💡 RECOMMENDATIONS:")
+    print("   1. Start with NeuML/pubmedbert-base-embeddings (highest priority)")
+    print("   2. For clinical notes: emilyalsentzer/Bio_ClinicalBERT")
+    print("   3. For long documents: lokeshch19/ModernPubMedBERT (2048 tokens)")
+    print("   4. For IR tasks: pritamdeka/S-PubMedBert-MS-MARCO")
+    print("=" * 80)
+
+
+def get_recommended_medical_models(
+    task_type: str = "general", max_memory_gb: float = 2.0
+) -> List[str]:
+    """
+    Get recommended medical models filtered by task type and memory constraints.
+
+    Args:
+        task_type: Type of task ('general', 'clinical_notes', 'literature', 'ir', 'long_context')
+        max_memory_gb: Maximum memory usage in GB
+
+    Returns:
+        List[str]: List of recommended model names
+    """
+    models = get_medical_models()
+
+    # Filter by memory
+    filtered = {
+        name: info
+        for name, info in models.items()
+        if info["memory_gb"] <= max_memory_gb
+    }
+
+    # Task-specific filtering
+    task_keywords = {
+        "general": ["biomedical", "medical", "clinical"],
+        "clinical_notes": ["clinical", "EHR", "MIMIC"],
+        "literature": ["PubMed", "medical literature"],
+        "ir": ["information retrieval", "search"],
+        "long_context": ["long", "2048"],
+    }
+
+    if task_type != "general":
+        keywords = task_keywords.get(task_type, [])
+        filtered = {
+            name: info
+            for name, info in filtered.items()
+            if any(
+                kw.lower() in " ".join(info["use_cases"] + info["strengths"]).lower()
+                for kw in keywords
+            )
+        }
+
+    # Sort by priority
+    sorted_models = sorted(
+        filtered.items(), key=lambda x: (x[1]["priority"], x[1]["memory_gb"])
+    )
+
+    return [name for name, _ in sorted_models]
