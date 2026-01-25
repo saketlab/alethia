@@ -1,110 +1,238 @@
-import re
-import warnings
-from typing import Dict, List
+"""
+fuzzy matching for alethia
+"""
 
+import logging
+import sys
+import warnings
+from typing import Dict, List, Optional, Union
+
+import numpy as np
 import pandas as pd
+
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+logger = logging.getLogger(__name__)
+
+from .utils import get_client, prompt_fuzzy_match
 
 
 class FuzzyLibraryManager:
+    """Manages fuzzy matching library imports and availability"""
+
     def __init__(self):
-        self.rapidfuzz = self.fuzzywuzzy = self.jellyfish = None
-        self.rapidfuzz_available = self.fuzzywuzzy_available = (
-            self.jellyfish_available
-        ) = False
+        self.rapidfuzz_available = False
+        self.fuzzywuzzy_available = False
+        self.jellyfish_available = False
+
+        self.rapidfuzz = None
+        self.fuzzywuzzy = None
+        self.jellyfish = None
+
         self._check_imports()
 
     def _check_imports(self):
-        try:
-            from rapidfuzz import fuzz, process
+        """Check which libraries are available"""
 
-            self.rapidfuzz = {"fuzz": fuzz, "process": process}
+        # Check RapidFuzz
+        try:
+            import rapidfuzz
+            from rapidfuzz import fuzz as rf_fuzz
+            from rapidfuzz import process as rf_process
+
+            self.rapidfuzz = {
+                "module": rapidfuzz,
+                "fuzz": rf_fuzz,
+                "process": rf_process,
+            }
             self.rapidfuzz_available = True
+            logger.info("✅ RapidFuzz available")
         except ImportError:
-            pass
+            logger.debug("RapidFuzz not available")
 
+        # Check FuzzyWuzzy
         try:
-            from fuzzywuzzy import fuzz, process
+            import fuzzywuzzy
+            from fuzzywuzzy import fuzz as fw_fuzz
+            from fuzzywuzzy import process as fw_process
 
-            self.fuzzywuzzy = {"fuzz": fuzz, "process": process}
+            self.fuzzywuzzy = {
+                "module": fuzzywuzzy,
+                "fuzz": fw_fuzz,
+                "process": fw_process,
+            }
             self.fuzzywuzzy_available = True
+            logger.info("✅ FuzzyWuzzy available")
         except ImportError:
-            pass
+            logger.debug("FuzzyWuzzy not available")
 
+        # Check Jellyfish
         try:
             import jellyfish
 
             self.jellyfish = jellyfish
             self.jellyfish_available = True
+            logger.debug("✅ Jellyfish available")
         except ImportError:
-            pass
+            logger.debug("Jellyfish not available")
 
+        # Issue warnings if nothing is available
         if not self.rapidfuzz_available and not self.fuzzywuzzy_available:
             warnings.warn(
                 "No fuzzy matching library available. Install rapidfuzz or fuzzywuzzy.",
                 ImportWarning,
             )
+        elif not self.rapidfuzz_available and self.fuzzywuzzy_available:
+            warnings.warn(
+                "Using FuzzyWuzzy. Install rapidfuzz for better performance: pip install rapidfuzz",
+                UserWarning,
+            )
 
     def get_primary_library(self):
+        """Get the primary library to use (prefer RapidFuzz)"""
         if self.rapidfuzz_available:
             return "rapidfuzz", self.rapidfuzz
-        if self.fuzzywuzzy_available:
+        elif self.fuzzywuzzy_available:
             return "fuzzywuzzy", self.fuzzywuzzy
-        return None, None
+        else:
+            return None, None
 
     def get_algorithm_function(self, algorithm: str):
-        _, lib = self.get_primary_library()
+        """Get the appropriate algorithm function"""
+        lib_name, lib = self.get_primary_library()
+
         if lib is None:
             return None
-        algo_map = {
+
+        # Map algorithm names to functions
+        algorithm_map = {
             "ratio": "ratio",
             "partial_ratio": "partial_ratio",
             "token_sort_ratio": "token_sort_ratio",
             "token_set_ratio": "token_set_ratio",
             "WRatio": "WRatio",
         }
-        return getattr(lib["fuzz"], algo_map.get(algorithm, "ratio"), None)
+
+        func_name = algorithm_map.get(algorithm, "ratio")
+
+        try:
+            return getattr(lib["fuzz"], func_name)
+        except AttributeError:
+            logger.warning(
+                f"Algorithm {algorithm} not available in {lib_name}, using ratio"
+            )
+            return getattr(lib["fuzz"], "ratio")
 
     def get_process_extract(self):
-        _, lib = self.get_primary_library()
-        return lib["process"].extract if lib else None
+        """Get the process.extract function"""
+        lib_name, lib = self.get_primary_library()
+
+        if lib is None:
+            return None
+
+        return lib["process"].extract
 
 
+# Global library manager
 lib_manager = FuzzyLibraryManager()
 
 
 class RobustFuzzyMatcher:
-    def __init__(self, algorithm: str = "ratio", preprocessor: str = "simple"):
+    """
+    Robust fuzzy matcher that works with available libraries
+    """
+
+    def __init__(
+        self,
+        algorithm: str = "ratio",
+        preprocessor: str = "simple",
+        prompt_matcher: str = None,
+        api_key: str = None,
+    ):
+        """
+        Initialize the matcher
+
+        Args:
+            algorithm: Algorithm to use ('ratio', 'partial_ratio', 'token_sort_ratio',
+                      'token_set_ratio', 'WRatio')
+            preprocessor: Preprocessing method ('none', 'simple', 'smart')
+        """
         self.algorithm = algorithm
+        self.preprocessor_name = preprocessor
+        self.prompt_matcher = (
+            get_client(model_name=prompt_matcher, api_key=api_key)
+            if prompt_matcher
+            else None
+        )
+
+        # Get algorithm function
         self.algorithm_func = lib_manager.get_algorithm_function(algorithm)
         self.process_extract = lib_manager.get_process_extract()
+
+        # Set up preprocessor
         self.preprocessor = self._get_preprocessor(preprocessor)
 
-    def _get_preprocessor(self, name):
-        if name == "none":
+        # Check if we can actually do fuzzy matching
+        if self.algorithm_func is None:
+            logger.warning(
+                "No fuzzy matching available - only exact matching will work"
+            )
+
+    def _get_preprocessor(self, preprocessor: str):
+        """Get preprocessing function"""
+        if preprocessor == "none":
             return lambda x: x
-        if name == "smart":
+        elif preprocessor == "simple":
+            return self._simple_preprocess
+        elif preprocessor == "smart":
             return self._smart_preprocess
-        return self._simple_preprocess
+        else:
+            logger.warning(f"Unknown preprocessor {preprocessor}, using simple")
+            return self._simple_preprocess
 
     def _simple_preprocess(self, text: str) -> str:
-        return text.lower().strip() if text else ""
-
-    def _smart_preprocess(self, text: str) -> str:
+        """Simple preprocessing"""
         if not text:
             return ""
+        return text.lower().strip()
+
+    def _smart_preprocess(self, text: str) -> str:
+        """Smart preprocessing"""
+        if not text:
+            return ""
+
+        import re
+
+        # Convert to lowercase and strip
         text = text.lower().strip()
+
+        # Remove extra punctuation and normalize whitespace
         text = re.sub(r"[^\w\s]", " ", text)
-        return re.sub(r"\s+", " ", text.strip())
+        text = re.sub(r"\s+", " ", text.strip())
+
+        return text
 
     def calculate_similarity(self, text1: str, text2: str) -> float:
-        proc1, proc2 = self.preprocessor(text1), self.preprocessor(text2)
+        """Calculate similarity between two texts"""
         if self.algorithm_func is None:
+            # Exact matching fallback
+            proc1 = self.preprocessor(text1)
+            proc2 = self.preprocessor(text2)
             return 100.0 if proc1 == proc2 else 0.0
+
+        # Preprocess
+        proc1 = self.preprocessor(text1)
+        proc2 = self.preprocessor(text2)
+
         if not proc1 and not proc2:
             return 100.0
         if not proc1 or not proc2:
             return 0.0
-        return float(self.algorithm_func(proc1, proc2))
+
+        try:
+            return float(self.algorithm_func(proc1, proc2))
+        except Exception as e:
+            logger.error(f"Error calculating similarity: {e}")
+            return 0.0
 
     def match_single(
         self,
@@ -112,37 +240,79 @@ class RobustFuzzyMatcher:
         candidates: List[str],
         limit: int = 5,
         score_cutoff: float = 0.0,
+        use_prompt: bool = False,
     ) -> List[Dict]:
+        """
+        Find best matches for a single query
+        """
         if not candidates:
             return []
 
-        if self.process_extract and self.algorithm_func:
-            processed = [self.preprocessor(c) for c in candidates]
-            extracted = self.process_extract(
-                self.preprocessor(query),
-                processed,
-                scorer=self.algorithm_func,
-                limit=limit,
-                score_cutoff=score_cutoff,
-            )
-            results = []
-            for match in extracted:
-                idx = (
-                    match[2]
-                    if len(match) >= 3
-                    else processed.index(match[0]) if match[0] in processed else 0
-                )
-                results.append(
-                    {"text": candidates[idx], "score": match[1], "index": idx}
-                )
-            return results
+        results = []
 
-        scores = [
-            {"text": c, "score": self.calculate_similarity(query, c), "index": i}
-            for i, c in enumerate(candidates)
-            if self.calculate_similarity(query, c) >= score_cutoff
-        ]
-        return sorted(scores, key=lambda x: x["score"], reverse=True)[:limit]
+        if use_prompt:
+            if self.prompt_matcher is None:
+                logger.error("Prompt matcher not initialized")
+                return results
+
+            llm_result = prompt_fuzzy_match(self.prompt_matcher, query, candidates)
+            if llm_result:
+                return [llm_result]
+
+        elif self.process_extract and self.algorithm_func:
+            # Try using optimized process.extract if available
+            try:
+                processed_candidates = [self.preprocessor(c) for c in candidates]
+                processed_query = self.preprocessor(query)
+
+                extracted = self.process_extract(
+                    processed_query,
+                    processed_candidates,
+                    scorer=self.algorithm_func,
+                    limit=limit,
+                    score_cutoff=score_cutoff,
+                )
+
+                # Convert to our format
+                for match in extracted:
+                    if len(match) >= 3:  # (text, score, index)
+                        results.append(
+                            {
+                                "text": candidates[match[2]],
+                                "score": match[1],
+                                "index": match[2],
+                            }
+                        )
+                    else:
+                        # Handle different return formats
+                        idx = (
+                            processed_candidates.index(match[0])
+                            if match[0] in processed_candidates
+                            else 0
+                        )
+                        results.append(
+                            {"text": candidates[idx], "score": match[1], "index": idx}
+                        )
+
+                return results
+
+            except Exception as e:
+                logger.warning(f"process.extract failed: {e}, using manual calculation")
+        else:
+            logger.debug(
+                "process_extract and/or algorithm_func not available, using manual calculation"
+            )
+
+        # Manual calculation fallback
+        scores = []
+        for i, candidate in enumerate(candidates):
+            score = self.calculate_similarity(query, candidate)
+            if score >= score_cutoff:
+                scores.append({"text": candidate, "score": score, "index": i})
+
+        # Sort by score and return top results
+        scores.sort(key=lambda x: x["score"], reverse=True)
+        return scores[:limit]
 
     def match_batch(
         self,
@@ -150,17 +320,26 @@ class RobustFuzzyMatcher:
         candidates: List[str],
         limit: int = 1,
         score_cutoff: float = 0.0,
+        use_prompt: bool = False,
     ) -> pd.DataFrame:
+        """
+        Batch matching
+        """
         results = []
+
         for query in queries:
-            matches = self.match_single(query, candidates, limit, score_cutoff)
+            matches = self.match_single(
+                query, candidates, limit, score_cutoff, use_prompt
+            )
+
             if matches:
+                best_match = matches[0]
                 results.append(
                     {
                         "query": query,
-                        "match": matches[0]["text"],
-                        "score": matches[0]["score"],
-                        "index": matches[0]["index"],
+                        "match": best_match["text"],
+                        "score": best_match["score"],
+                        "index": best_match["index"],
                         "all_matches": matches,
                     }
                 )
@@ -168,13 +347,25 @@ class RobustFuzzyMatcher:
                 results.append(
                     {
                         "query": query,
-                        "match": None,
+                        "match": None,  # No match found
                         "score": 0.0,
                         "index": -1,
                         "all_matches": [],
                     }
                 )
+
         return pd.DataFrame(results)
+
+    def get_library_info(self) -> Dict:
+        """Get information about available libraries"""
+        return {
+            "rapidfuzz_available": lib_manager.rapidfuzz_available,
+            "fuzzywuzzy_available": lib_manager.fuzzywuzzy_available,
+            "jellyfish_available": lib_manager.jellyfish_available,
+            "primary_library": lib_manager.get_primary_library()[0],
+            "algorithm": self.algorithm,
+            "algorithm_available": self.algorithm_func is not None,
+        }
 
 
 def robust_fuzzy_match(
@@ -183,32 +374,124 @@ def robust_fuzzy_match(
     algorithm: str = "ratio",
     threshold: float = 70.0,
     preprocessor: str = "simple",
+    prompt_matcher: str = None,
+    api_key: str = None,
+    use_prompt: bool = False,
 ) -> pd.DataFrame:
-    matcher = RobustFuzzyMatcher(algorithm=algorithm, preprocessor=preprocessor)
-    return matcher.match_batch(queries, candidates, limit=1, score_cutoff=threshold)
+    """
+    High-level robust fuzzy matching function
+
+    Args:
+        queries: List of query strings
+        candidates: List of candidate strings
+        algorithm: Algorithm to use
+        threshold: Minimum score threshold
+        preprocessor: Preprocessing method
+
+    Returns:
+        DataFrame with results
+    """
+    matcher = RobustFuzzyMatcher(
+        algorithm=algorithm,
+        preprocessor=preprocessor,
+        prompt_matcher=prompt_matcher,
+        api_key=api_key,
+    )
+
+    results = matcher.match_batch(
+        queries, candidates, limit=1, score_cutoff=threshold, use_prompt=use_prompt
+    )
+
+    # Log library info
+    info = matcher.get_library_info()
+    logger.info(
+        f"Using {info['primary_library']} library with {info['algorithm']} algorithm"
+    )
+
+    return results
 
 
 def alethia_fuzzy_baseline(
     incorrect_entries: List[str], reference_entries: List[str], threshold: float = 70.0
 ) -> pd.DataFrame:
-    algorithm = (
-        "WRatio"
-        if lib_manager.rapidfuzz_available or lib_manager.fuzzywuzzy_available
-        else "exact"
-    )
+    """
+    Create Alethia-compatible fuzzy baseline results
+
+    Args:
+        incorrect_entries: Entries to match
+        reference_entries: Reference entries to match against
+        threshold: Similarity threshold (0-100)
+
+    Returns:
+        DataFrame in Alethia-compatible format
+    """
+    # Use best available algorithm
+    best_algorithm = "WRatio"
+    if not lib_manager.rapidfuzz_available and not lib_manager.fuzzywuzzy_available:
+        best_algorithm = "exact"
+
     results = robust_fuzzy_match(
         incorrect_entries,
         reference_entries,
-        algorithm=algorithm,
+        algorithm=best_algorithm,
         threshold=threshold,
         preprocessor="smart",
     )
-    return pd.DataFrame(
+
+    # Convert to Alethia format
+    alethia_format = pd.DataFrame(
         {
             "given_entity": results["query"],
             "fuzzy_prediction": results["match"],
-            "fuzzy_similarity": results["score"] / 100.0,
-            "fuzzy_algorithm": algorithm,
+            "fuzzy_similarity": results["score"] / 100.0,  # Normalize to 0-1 range
+            "fuzzy_algorithm": best_algorithm,
             "fuzzy_library": lib_manager.get_primary_library()[0] or "exact_only",
         }
     )
+
+    return alethia_format
+
+
+def compare_algorithms(queries: List[str], candidates: List[str]) -> pd.DataFrame:
+    """
+    Compare available algorithms
+
+    Args:
+        queries: Test queries
+        candidates: Test candidates
+
+    Returns:
+        Comparison DataFrame
+    """
+    algorithms = [
+        "ratio",
+        "partial_ratio",
+        "token_sort_ratio",
+        "token_set_ratio",
+        "WRatio",
+    ]
+    results = {}
+
+    for algorithm in algorithms:
+        try:
+            matcher = RobustFuzzyMatcher(algorithm=algorithm)
+            if matcher.algorithm_func is not None:
+                algo_results = matcher.match_batch(queries, candidates)
+                results[algorithm] = algo_results[["query", "match", "score"]].copy()
+            else:
+                logger.warning(f"Algorithm {algorithm} not available")
+        except Exception as e:
+            logger.error(f"Error with algorithm {algorithm}: {e}")
+
+    if not results:
+        logger.error("No algorithms available for comparison")
+        return pd.DataFrame({"query": queries})
+
+    # Combine results
+    base_df = pd.DataFrame({"query": queries})
+
+    for algo_name, df in results.items():
+        base_df[f"{algo_name}_match"] = df["match"].values
+        base_df[f"{algo_name}_score"] = df["score"].values
+
+    return base_df
