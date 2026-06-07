@@ -1,19 +1,22 @@
 import logging
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Union
 
-import instructor
 import pandas as pd
 import psutil
-from pydantic import BaseModel
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
+try:
+    from pydantic import BaseModel
 
-class FuzzyMatch(BaseModel):
-    given_entity: str
-    fuzzy_prediction: str
-    fuzzy_similarity: float  # 0-1 confidence
+    class FuzzyMatch(BaseModel):
+        given_entity: str
+        fuzzy_prediction: str
+        fuzzy_similarity: float  # 0-1 confidence
+
+except ImportError:
+    FuzzyMatch = None
 
 
 prompt = """
@@ -188,16 +191,29 @@ def setup_matplotlib():
             "Matplotlib is not installed. Install it with: pip install matplotlib"
         )
 
-    plt.rcParams["figure.dpi"] = 300
-    plt.rcParams["savefig.dpi"] = 300
-    plt.rcParams["font.family"] = "sans-serif"
-    plt.rcParams["font.sans-serif"] = ["Arial"]
-    plt.rcParams["axes.labelweight"] = "normal"
-
-    plt.rcParams["mathtext.fontset"] = "custom"
-    plt.rcParams["mathtext.rm"] = "Arial"
-    plt.rcParams["mathtext.it"] = "Arial:italic"
-    plt.rcParams["mathtext.bf"] = "Arial:bold"
+    # Arial, crisp DPI, and legible default sizes for figures embedded in docs/notebooks.
+    plt.rcParams.update(
+        {
+            "figure.dpi": 150,
+            "savefig.dpi": 300,
+            "savefig.bbox": "tight",
+            "font.family": "sans-serif",
+            "font.sans-serif": ["Arial", "Helvetica", "DejaVu Sans"],
+            "axes.labelweight": "normal",
+            "font.size": 12,
+            "axes.titlesize": 14,
+            "axes.labelsize": 12,
+            "xtick.labelsize": 11,
+            "ytick.labelsize": 11,
+            "legend.fontsize": 11,
+            "axes.spines.top": False,
+            "axes.spines.right": False,
+            "mathtext.fontset": "custom",
+            "mathtext.rm": "Arial",
+            "mathtext.it": "Arial:italic",
+            "mathtext.bf": "Arial:bold",
+        }
+    )
 
 
 def get_system_usage() -> Dict[str, float]:
@@ -279,8 +295,13 @@ def get_client(model_name: str = "ollama/gemma2:2b", api_key: str = None):
             logger.warning("No model name provided for Instructor client")
             return None
 
+        import instructor
+
         client = instructor.from_provider(model_name, api_key=api_key)
         return client
+    except ImportError:
+        logger.error("instructor not installed; install with: pip install instructor")
+        return None
     except Exception as e:
         logger.error(f"Failed to create Instructor client: {e}")
         return None

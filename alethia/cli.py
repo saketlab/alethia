@@ -3,8 +3,6 @@
 import typer
 from rich.console import Console
 
-import alethia
-
 app = typer.Typer()
 console = Console()
 

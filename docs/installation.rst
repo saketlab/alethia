@@ -32,13 +32,13 @@ You can either clone the public repository:
 
 .. code-block:: console
 
-    $ git clone git://github.com/saketkc/alethia
+    $ git clone git://github.com/saketlab/alethia
 
 Or download the `tarball`_:
 
 .. code-block:: console
 
-    $ curl -OJL https://github.com/saketkc/alethia/tarball/master
+    $ curl -OJL https://github.com/saketlab/alethia/tarball/master
 
 Once you have a copy of the source, you can install it with:
 
@@ -47,5 +47,5 @@ Once you have a copy of the source, you can install it with:
     $ python setup.py install
 
 
-.. _Github repo: https://github.com/saketkc/alethia
-.. _tarball: https://github.com/saketkc/alethia/tarball/master
+.. _Github repo: https://github.com/saketlab/alethia
+.. _tarball: https://github.com/saketlab/alethia/tarball/master

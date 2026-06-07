@@ -1,4 +1,4 @@
-.PHONY: clean clean-build clean-pyc clean-test coverage dist docs help install lint format test test-all release
+.PHONY: clean clean-build clean-pyc clean-test coverage dist docs docs-strict docs-full docs-open docs-serve notebooks help install lint format test test-all release
 
 .DEFAULT_GOAL := help
 
@@ -84,12 +84,26 @@ coverage: ## check code coverage quickly with the default Python
 	pytest --cov=alethia --cov-report=html --cov-report=term
 	$(BROWSER) htmlcov/index.html
 
-docs: ## generate Sphinx HTML documentation with Furo theme
-	sphinx-build -b html docs docs/_build/html
+NOTEBOOKS := $(wildcard docs/notebooks/*.ipynb)
+SPHINX_BUILD := sphinx-build -b html docs docs/_build/html
+
+notebooks: ## execute all vignette notebooks in place (refreshes committed outputs)
+	jupyter nbconvert --to notebook --execute --inplace \
+		--ExecutePreprocessor.timeout=900 $(NOTEBOOKS)
+	@echo ""
+	@echo "Executed $(words $(NOTEBOOKS)) notebook(s). Review and commit the updated outputs."
+
+docs: ## build Sphinx HTML docs (uses committed notebook outputs; run 'make notebooks' first if they changed)
+	$(SPHINX_BUILD)
 	@echo ""
 	@echo "Documentation built successfully!"
 	@echo "Location: docs/_build/html/"
 	@echo "Open docs/_build/html/index.html in your browser"
+
+docs-strict: ## build docs treating warnings as errors (matches CI / GitHub Pages)
+	$(SPHINX_BUILD) -W --keep-going
+
+docs-full: notebooks docs ## execute notebooks then build docs (full rebuild from source)
 
 docs-open: docs ## build docs and open in browser
 	$(BROWSER) docs/_build/html/index.html

@@ -1,0 +1,52 @@
+name: Documentation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write  # needed to push to the gh-pages branch
+
+concurrency:
+  group: "docs"
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Cache HuggingFace models
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-models-${{ hashFiles('docs/notebooks/*.ipynb') }}
+          restore-keys: hf-models-
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[cpu,docs]" sentence-transformers torch --extra-index-url https://download.pytorch.org/whl/cpu
+
+      - name: Build docs (executes notebooks, then Sphinx)
+        env:
+          TQDM_DISABLE: "1"            # silence progress bars in executed notebooks
+          HF_HUB_DISABLE_PROGRESS_BARS: "1"
+          TOKENIZERS_PARALLELISM: "false"
+        run: make docs-full
+
+      - name: Deploy to gh-pages
+        if: github.ref == 'refs/heads/main'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: docs/_build/html
+          publish_branch: gh-pages

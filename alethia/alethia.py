@@ -1,9 +1,7 @@
 import logging
 import os
-import sys
 import time
-import warnings
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -11,12 +9,9 @@ from tqdm import tqdm
 
 from .cpu_optimizations import (
     ClinicalCPUOptimizationConfig,
-    cpu_thread_pool,
     get_cpu_optimized_model,
-    get_cpu_runtime_hints,
 )
 from .utils import (
-    convert_memory_to_gb,
     get_client,
     print_resource_usage,
     prompt_fuzzy_match,
@@ -394,6 +389,13 @@ def get_best_available_backend(prefer_cpu: bool = False):
         return "exact"
 
 
+def _model_label(model) -> str:
+    """A short string identifying a model spec (name, callable, or loaded object)."""
+    if isinstance(model, str):
+        return model
+    return getattr(model, "__name__", type(model).__name__)
+
+
 def run_openai_matching(
     dirty_entries: List[str],
     reference_entries: List[str],
@@ -549,130 +551,27 @@ def run_gemini_matching(
 def optimized_batch_matching(
     dirty_entries, reference_entries, model_obj, backend, threshold=0.7
 ):
-    """
-    Optimized batch matching using vectorized operations
-    """
-    if _VERBOSE_MODE:
-        logger.info("Using optimized batch processing")
+    """Match dirty entries to references using a loaded embedding model.
 
-    all_texts = dirty_entries + reference_entries
-    hints = get_cpu_runtime_hints(model_obj)
-    batch_size = hints.get("batch_size") or 64
+    Thin wrapper over the unified embedding engine (:func:`alethia.embedder.match_by_embeddings`),
+    kept for backward compatibility. ``model_obj`` is a loaded SentenceTransformer or
+    FastEmbed model; ``backend`` selects how it is wrapped.
+    """
+    from .embedder import (
+        FastEmbedEmbedder,
+        SentenceTransformerEmbedder,
+        match_by_embeddings,
+    )
 
     if backend == "fastembed":
-        all_embeddings = np.array(list(model_obj.embed(all_texts)))
+        embedder = FastEmbedEmbedder(model_obj)
     else:
-        show_progress = _VERBOSE_MODE or len(all_texts) > 50
-        with cpu_thread_pool(hints.get("num_threads")):
-            all_embeddings = model_obj.encode(
-                all_texts,
-                batch_size=batch_size,
-                show_progress_bar=show_progress,
-            )
-
-    n_incorrect = len(dirty_entries)
-    incorrect_embeddings = all_embeddings[:n_incorrect]
-    reference_embeddings = all_embeddings[n_incorrect:]
-
-    if NUMBA_AVAILABLE:
-        incorrect_embeddings = fast_normalize_embeddings(incorrect_embeddings)
-        reference_embeddings = fast_normalize_embeddings(reference_embeddings)
-        similarity_matrix = fast_cosine_similarity_matrix(
-            incorrect_embeddings, reference_embeddings
-        )
-    else:
-        incorrect_embeddings = incorrect_embeddings / np.linalg.norm(
-            incorrect_embeddings, axis=1, keepdims=True
-        )
-        reference_embeddings = reference_embeddings / np.linalg.norm(
-            reference_embeddings, axis=1, keepdims=True
-        )
-        similarity_matrix = np.dot(incorrect_embeddings, reference_embeddings.T)
-
-    best_indices = np.argmax(similarity_matrix, axis=1)
-    best_scores = np.max(similarity_matrix, axis=1)
-
-    # Always return the best match from reference, even if below threshold
-    # Users can filter by score themselves if needed
-    results = []
-    for i, (entry, ref_idx, sim) in enumerate(
-        zip(dirty_entries, best_indices, best_scores)
-    ):
-        results.append(
-            {
-                "given_entity": entry,
-                "alethia_prediction": reference_entries[ref_idx],
-                "alethia_score": float(sim),
-            }
-        )
-
-    return results
+        embedder = SentenceTransformerEmbedder(model_obj)
+    return match_by_embeddings(dirty_entries, reference_entries, embedder)
 
 
-def standard_matching(
-    dirty_entries, reference_entries, model_obj, backend, threshold=0.7
-):
-    """
-    Standard one-by-one matching
-    """
-    if _VERBOSE_MODE:
-        logger.info("Using standard processing")
-
-    hints = get_cpu_runtime_hints(model_obj)
-    reference_embeddings = {}
-    iterator = (
-        tqdm(reference_entries, desc="Reference embeddings")
-        if (_VERBOSE_MODE or len(reference_entries) > 20)
-        else reference_entries
-    )
-    with cpu_thread_pool(hints.get("num_threads")):
-        for ref_entity in iterator:
-            if backend == "fastembed":
-                embedding = next(model_obj.embed([ref_entity]))
-            else:
-                embedding = model_obj.encode(ref_entity)
-            reference_embeddings[ref_entity] = embedding
-
-    results = []
-    iterator = (
-        tqdm(dirty_entries, desc="Processing queries")
-        if (_VERBOSE_MODE or len(dirty_entries) > 20)
-        else dirty_entries
-    )
-    with cpu_thread_pool(hints.get("num_threads")):
-        for incorrect in iterator:
-            if str(incorrect) == "nan":
-                results.append(
-                    {
-                        "given_entity": incorrect,
-                        "alethia_prediction": np.nan,
-                        "alethia_score": np.nan,
-                    }
-                )
-                continue
-
-            if backend == "fastembed":
-                query_embedding = next(model_obj.embed([incorrect]))
-            else:
-                query_embedding = model_obj.encode(incorrect)
-
-            similarities = {}
-            for ref_entity, ref_embedding in reference_embeddings.items():
-                similarity = cosine_similarity(query_embedding, ref_embedding)
-                similarities[ref_entity] = similarity
-
-            best_match = max(similarities, key=similarities.get)
-            best_score = similarities[best_match]
-
-            results.append(
-                {
-                    "given_entity": incorrect,
-                    "alethia_prediction": best_match,
-                    "alethia_score": best_score,
-                }
-            )
-
-    return results
+# Retained for backward compatibility; the unified engine made the two paths identical.
+standard_matching = optimized_batch_matching
 
 
 def run_rapidfuzz_matching(
@@ -716,12 +615,50 @@ def run_rapidfuzz_matching(
     return pd.DataFrame(results)
 
 
-import logging
-import time
-from typing import Any, Dict, List
+def _embedding_fallback(
+    dirty_entries: List[str],
+    reference_entries: List[str],
+    failed_backend: str,
+    threshold: float,
+    verbose: bool,
+) -> pd.DataFrame:
+    """Match via the best available non-embedding engine when an embedder is unusable.
 
-import numpy as np
-import pandas as pd
+    Tries RapidFuzz, then OpenAI, then Gemini, skipping ``failed_backend``. The backend
+    actually used is recorded in ``result.attrs['fallback_backend']``. Raises if no
+    fallback is available.
+    """
+    chain = [
+        (
+            "rapidfuzz",
+            RAPIDFUZZ_AVAILABLE,
+            lambda: run_rapidfuzz_matching(dirty_entries, reference_entries),
+        ),
+        (
+            "openai",
+            OPENAI_AVAILABLE,
+            lambda: run_openai_matching(
+                dirty_entries, reference_entries, "text-embedding-ada-002", threshold
+            ),
+        ),
+        (
+            "gemini",
+            GEMINI_AVAILABLE,
+            lambda: run_gemini_matching(
+                dirty_entries, reference_entries, "models/embedding-001", threshold
+            ),
+        ),
+    ]
+    for name, available, run in chain:
+        if name != failed_backend and available:
+            if verbose:
+                logger.info(f"Falling back to {name}")
+            df = run()
+            df.attrs["fallback_backend"] = name
+            return df
+    raise RuntimeError(
+        f"No matching backend available (embedder failed; backend={failed_backend!r})."
+    )
 
 
 def _find_exact_matches(
@@ -855,7 +792,7 @@ def _merge_exact_and_model_results(
 def alethia(
     dirty_entries: List[str],
     reference_entries: List[str],
-    model: str = "rapidfuzz",
+    model: Union[str, Callable[[List[str]], Any], Any] = "rapidfuzz",
     backend: str = "auto",
     force_cpu: bool = True,
     use_batch_optimization: bool = True,
@@ -865,7 +802,7 @@ def alethia(
     exact_match_case_sensitive: bool = False,
     return_model_attrs: bool = True,
     drop_duplicates: bool = True,
-    remove_identical_hits: bool = True,
+    remove_identical_hits: bool = False,
     api_key: str = "",
     **kwargs,
 ) -> pd.DataFrame:
@@ -875,7 +812,9 @@ def alethia(
     Args:
         dirty_entries: List of incorrect entries
         reference_entries: List of reference entries
-        model: Model name.
+        model: An embedding model name, an ``embed_fn(list[str]) -> ndarray`` callable, a
+            loaded model object (SentenceTransformer / FastEmbed), or one of the string
+            keywords ``"rapidfuzz"``, ``"openai"``, ``"gemini"``.
         backend: Backend to use ('auto', 'sentence-transformers', 'fastembed', 'rapidfuzz', 'openai', 'gemini', 'instructor')
         force_cpu: Force CPU usage
         use_batch_optimization: Use batch optimization
@@ -886,7 +825,7 @@ def alethia(
         return_model_attrs: Include model and backend columns in results (default: True)
         drop_duplicates: Remove duplicate rows from results (default: True)
         remove_identical_hits: Remove rows where prediction equals input - useful when dirty entries
-            are in reference list and you don't want self-matches (default: True)
+            are in reference list and you don't want self-matches (default: False)
         api_key: API key for the instructor if required
         **kwargs: Additional arguments (model_name for API backends)
 
@@ -983,7 +922,9 @@ def alethia(
                     final_results.given_entity != final_results.alethia_prediction
                 ]
                 if verbose or _VERBOSE_MODE:
-                    logger.info(f"Filtered out {len(exact_matches) - len(final_results)} self-matches")
+                    logger.info(
+                        f"Filtered out {len(exact_matches) - len(final_results)} self-matches"
+                    )
 
             if drop_duplicates:
                 final_results = final_results.drop_duplicates()
@@ -996,6 +937,8 @@ def alethia(
                 f"Processing {len(remaining_for_model)} entries through model matching"
             )
 
+        # String keywords select the non-embedding engines. Everything else (a model name,
+        # an embed_fn callable, or a loaded model object) uses the embedding engine.
         if model == "rapidfuzz" or backend == "rapidfuzz":
             model_results = run_rapidfuzz_matching(
                 remaining_for_model, clean_reference_entries
@@ -1037,142 +980,44 @@ def alethia(
 
             model_results = pd.DataFrame(model_results_list)
         else:
-            if backend == "auto":
-                backend = get_best_available_backend(prefer_cpu=force_cpu)
-                if verbose or _VERBOSE_MODE:
-                    logger.info(f"Auto-selected backend: {backend}")
+            # --- Unified embedding engine ---------------------------------------------
+            # A model name, a callable embed_fn, or a loaded model object all become an
+            # Embedder; match_by_embeddings is the single matching primitive. If a named
+            # model cannot be resolved, fall back to fuzzy/API matching as before.
+            from .embedder import as_embedder, match_by_embeddings
 
+            embedder = None
             try:
-                if backend == "fastembed":
-                    model_obj = load_fastembed_model(model)
-                elif backend == "sentence-transformers":
-                    model_obj = load_sentence_transformer_model(
-                        model, force_cpu=force_cpu
-                    )
-                else:
-                    raise ValueError(f"Unsupported backend: {backend}")
-
-                if model_obj is None:
-                    raise ValueError(
-                        f"Failed to load model {model} with backend {backend}"
-                    )
-
+                embedder = as_embedder(model, backend=backend, force_cpu=force_cpu)
             except Exception as e:
-                logger.error(f"Model loading failed: {e}")
-                model_obj = None  # Ensure model_obj is None after loading failure
+                logger.error(f"Could not build embedder for {model!r}: {e}")
+                model_results = _embedding_fallback(
+                    remaining_for_model,
+                    clean_reference_entries,
+                    backend,
+                    threshold,
+                    verbose or _VERBOSE_MODE,
+                )
+                backend = model_results.attrs.get("fallback_backend", backend)
 
-                # Try alternative embedding backends before falling back to fuzzy matching
-                if backend == "fastembed" and SENTENCE_TRANSFORMERS_AVAILABLE:
-                    if verbose or _VERBOSE_MODE:
-                        logger.info("FastEmbed failed, trying sentence-transformers")
-
-                    # Try with current force_cpu setting
-                    model_obj = load_sentence_transformer_model(model, force_cpu=force_cpu)
-
-                    # If CPU failed and force_cpu=True, try GPU
-                    if model_obj is None and force_cpu:
-                        if verbose or _VERBOSE_MODE:
-                            logger.info("CPU loading failed, retrying sentence-transformers with GPU")
-                        model_obj = load_sentence_transformer_model(model, force_cpu=False)
-
-                    # Update backend if model loaded successfully
-                    if model_obj is not None:
-                        backend = "sentence-transformers"
-                        if verbose or _VERBOSE_MODE:
-                            logger.info(f"Successfully loaded with sentence-transformers")
-                    else:
-                        if verbose or _VERBOSE_MODE:
-                            logger.warning(f"sentence-transformers failed to load {model}")
-
-                # If still no model loaded, fall back to fuzzy/API methods
-                if model_obj is None:
-                    if backend != "rapidfuzz" and RAPIDFUZZ_AVAILABLE:
-                        if verbose or _VERBOSE_MODE:
-                            logger.info("Falling back to RapidFuzz")
-                        model_results = run_rapidfuzz_matching(
-                            remaining_for_model, clean_reference_entries
-                        )
-                        backend = "rapidfuzz"  # Update backend to reflect actual backend used
-                    elif backend != "openai" and OPENAI_AVAILABLE:
-                        if verbose or _VERBOSE_MODE:
-                            logger.info("Falling back to OpenAI")
-                        model_results = run_openai_matching(
-                            remaining_for_model,
-                            clean_reference_entries,
-                            "text-embedding-ada-002",
-                            threshold,
-                        )
-                        backend = "openai"  # Update backend to reflect actual backend used
-                    elif backend != "gemini" and GEMINI_AVAILABLE:
-                        if verbose or _VERBOSE_MODE:
-                            logger.info("Falling back to Gemini")
-                        model_results = run_gemini_matching(
-                            remaining_for_model,
-                            clean_reference_entries,
-                            "models/embedding-001",
-                            threshold,
-                        )
-                        backend = "gemini"  # Update backend to reflect actual backend used
-                    else:
-                        raise
-
-            # Only try model processing if model_obj was successfully loaded
-            if model_obj is not None:
+            if embedder is not None:
                 try:
-                    if use_batch_optimization and len(remaining_for_model) > 10:
-                        results = optimized_batch_matching(
-                            remaining_for_model,
-                            clean_reference_entries,
-                            model_obj,
-                            backend,
-                            threshold,
-                        )
-                        acceleration = "Batch-Optimized"
-                        if NUMBA_AVAILABLE:
-                            acceleration += "+Numba"
-                    else:
-                        results = standard_matching(
-                            remaining_for_model,
-                            clean_reference_entries,
-                            model_obj,
-                            backend,
-                            threshold,
-                        )
-                        acceleration = "Standard"
-
+                    results = match_by_embeddings(
+                        remaining_for_model, clean_reference_entries, embedder
+                    )
                     model_results = pd.DataFrame(results)
-
+                    backend = embedder.family
+                    acceleration = "Embedding+Numba" if NUMBA_AVAILABLE else "Embedding"
                 except Exception as e:
-                    logger.error(f"Processing failed: {e}")
-                    if backend != "rapidfuzz" and RAPIDFUZZ_AVAILABLE:
-                        if verbose or _VERBOSE_MODE:
-                            logger.info("Falling back to RapidFuzz")
-                        model_results = run_rapidfuzz_matching(
-                            remaining_for_model, clean_reference_entries
-                        )
-                        backend = "rapidfuzz"  # Update backend to reflect actual backend used
-                    elif backend != "openai" and OPENAI_AVAILABLE:
-                        if verbose or _VERBOSE_MODE:
-                            logger.info("Falling back to OpenAI")
-                        model_results = run_openai_matching(
-                            remaining_for_model,
-                            clean_reference_entries,
-                            "text-embedding-ada-002",
-                            threshold,
-                        )
-                        backend = "openai"  # Update backend to reflect actual backend used
-                    elif backend != "gemini" and GEMINI_AVAILABLE:
-                        if verbose or _VERBOSE_MODE:
-                            logger.info("Falling back to Gemini")
-                        model_results = run_gemini_matching(
-                            remaining_for_model,
-                            clean_reference_entries,
-                            "models/embedding-001",
-                            threshold,
-                        )
-                        backend = "gemini"  # Update backend to reflect actual backend used
-                    else:
-                        raise
+                    logger.error(f"Embedding matching failed: {e}")
+                    model_results = _embedding_fallback(
+                        remaining_for_model,
+                        clean_reference_entries,
+                        backend,
+                        threshold,
+                        verbose or _VERBOSE_MODE,
+                    )
+                    backend = model_results.attrs.get("fallback_backend", backend)
 
         # MERGE EXACT MATCHES WITH MODEL RESULTS
         final_results = _reconstruct_results_with_exact_and_model_matches(
@@ -1193,7 +1038,7 @@ def alethia(
                 ),
                 "backend": backend,
                 "processing_time": processing_time,
-                "model": model,
+                "model": _model_label(model),
                 "nan_entries_count": sum(nan_mask),
                 "exact_matches_count": len(exact_matches),
                 "processed_entries_count": len(remaining_for_model),
@@ -1212,7 +1057,7 @@ def alethia(
             if len(exact_matches) > 0:
                 logger.info(f"Found {len(exact_matches)} exact matches (score=1.0)")
         if return_model_attrs:
-            final_results["alethia_method"] = model
+            final_results["alethia_method"] = _model_label(model)
             final_results["alethia_backend"] = backend
         if remove_identical_hits:
             final_results = final_results[
@@ -1568,585 +1413,3 @@ def enable_info_logging():
 def disable_verbose_logging():
     """Disable verbose logging (return to minimal mode)"""
     set_verbose(False)
-
-
-def _convert_memory_to_gb(memory_str):
-    """Helper function to convert memory strings to GB float values"""
-    if not memory_str or memory_str == "Unknown":
-        return None
-
-    try:
-        memory_str = str(memory_str).upper()
-        if "GB" in memory_str:
-            return float(memory_str.replace("GB", ""))
-        elif "MB" in memory_str:
-            return round(float(memory_str.replace("MB", "")) / 1024, 2)
-        else:
-            return float(memory_str)
-    except (ValueError, TypeError):
-        return None
-
-
-def get_available_models(
-    backend: str = "all",
-    include_api: bool = True,
-    verbose: bool = False,
-    include_details: bool = True,
-    use_mteb_data: bool = True,
-    sort_by: str = "performance",
-) -> Dict[str, Union[List[str], pd.DataFrame]]:
-    """
-    Get available models for different backends with MTEB integration
-
-    Args:
-        backend: Backend to check ("all", "sentence-transformers", "fastembed", "openai", "gemini", "rapidfuzz")
-        include_api: Include API-based models (requires API keys)
-        verbose: Print detailed information
-        include_details: Return detailed DataFrames with size/dimension info instead of lists
-        use_mteb_data: Use MTEB dashboard data for enhanced model information
-        sort_by: Sorting method ("performance", "size", "name", "dimensions")
-
-    Returns:
-        Dict[str, Union[List[str], pd.DataFrame]]: Dictionary mapping backend names to available models
-    """
-    from .models import (
-        classify_embedding_models,
-        get_detailed_model_info,
-        load_mteb_dashboard_data,
-    )
-
-    available_models = {}
-
-    mteb_df = pd.DataFrame()
-    if use_mteb_data:
-        try:
-            mteb_df = load_mteb_dashboard_data()
-            if verbose and not mteb_df.empty:
-                print(
-                    f"📊 Loaded {len(mteb_df)} HuggingFace models from MTEB dashboard"
-                )
-        except Exception as e:
-            if verbose:
-                print(f"⚠️  Could not load MTEB data: {e}")
-
-    if backend in ["all", "sentence-transformers"] and SENTENCE_TRANSFORMERS_AVAILABLE:
-        model_details = get_detailed_model_info()
-        classifications = classify_embedding_models()
-
-        st_model_names = []
-        for category_info in classifications.values():
-            st_model_names.extend(category_info["models"])
-
-        seen = set()
-        st_model_names = [x for x in st_model_names if not (x in seen or seen.add(x))]
-
-        if not mteb_df.empty:
-            mteb_models = mteb_df["clean_model_name"].tolist()
-            for mteb_model in mteb_models:
-                if mteb_model not in st_model_names:
-                    st_model_names.append(mteb_model)
-
-        if include_details:
-            st_data = []
-            if verbose:
-                print("🔍 Gathering Sentence Transformers model details...")
-
-            iterator = (
-                tqdm(st_model_names, desc="Getting model info")
-                if verbose
-                else st_model_names
-            )
-
-            for model_name in iterator:
-                model_info = {
-                    "model": model_name,
-                    "backend": "sentence-transformers",
-                    "available": True,
-                }
-
-                curated_info = model_details.get(model_name, {})
-                if curated_info:
-                    model_info.update(
-                        {
-                            "dimensions": curated_info.get("dimensions"),
-                            "size_in_GB": _convert_memory_to_gb(
-                                curated_info.get("estimated_memory")
-                            ),
-                            "estimated_params": curated_info.get("estimated_params"),
-                            "organization": curated_info.get("organization"),
-                            "size_category": curated_info.get("size_category"),
-                            "best_use_case": curated_info.get("best_use_case"),
-                            "data_source": "Curated",
-                        }
-                    )
-
-                if not mteb_df.empty:
-                    mteb_match = mteb_df[mteb_df["clean_model_name"] == model_name]
-                    if not mteb_match.empty:
-                        mteb_row = mteb_match.iloc[0]
-                        model_info.update(
-                            {
-                                "mteb_rank": _safe_int_convert(
-                                    mteb_row["Rank (Borda)"]
-                                ),
-                                "mteb_overall_score": _safe_float_convert(
-                                    mteb_row["Mean (Task)"]
-                                ),
-                                "dimensions": _safe_int_convert(
-                                    mteb_row["Embedding Dimensions"]
-                                )
-                                or model_info.get("dimensions"),
-                                "size_in_GB": (
-                                    mteb_row["memory_gb"]
-                                    if pd.notna(mteb_row["memory_gb"])
-                                    else model_info.get("size_in_GB")
-                                ),
-                                "max_seq_length": _safe_int_convert(
-                                    mteb_row["Max Tokens"]
-                                ),
-                                "parameters": mteb_row["clean_parameters"],
-                                "data_source": (
-                                    "MTEB"
-                                    if model_info.get("data_source") != "Curated"
-                                    else "MTEB+Curated"
-                                ),
-                                "retrieval_score": _safe_float_convert(
-                                    mteb_row["Retrieval"]
-                                ),
-                                "classification_score": _safe_float_convert(
-                                    mteb_row["Classification"]
-                                ),
-                                "clustering_score": _safe_float_convert(
-                                    mteb_row["Clustering"]
-                                ),
-                                "sts_score": _safe_float_convert(mteb_row["STS"]),
-                                "reranking_score": _safe_float_convert(
-                                    mteb_row["Reranking"]
-                                ),
-                            }
-                        )
-
-                for category, cat_info in classifications.items():
-                    if model_name in cat_info["models"]:
-                        model_info["category"] = category
-                        model_info["category_description"] = cat_info["description"]
-                        break
-                else:
-                    model_info["category"] = "uncategorized"
-
-                st_data.append(model_info)
-
-            st_df = pd.DataFrame(st_data)
-
-            st_df = _sort_dataframe(st_df, sort_by)
-
-            available_models["sentence-transformers"] = st_df
-        else:
-            available_models["sentence-transformers"] = st_model_names
-
-        if verbose:
-            count = len(st_model_names)
-            mteb_count = len(mteb_df) if not mteb_df.empty else 0
-            curated_count = len([m for m in st_model_names if m in model_details])
-
-            print(f"✅ Sentence Transformers: {count} models available")
-            print(f"   📊 {mteb_count} from MTEB dashboard")
-            print(f"   🎯 {curated_count} from curated database")
-            print(f"   📈 Sorted by: {sort_by}")
-
-            if include_details and not st_df.empty:
-                print("   Top models by current sorting:")
-                top_models = st_df.head(3)
-                for _, row in top_models.iterrows():
-                    info_parts = []
-                    if pd.notna(row.get("mteb_rank")):
-                        info_parts.append(f"MTEB #{int(row['mteb_rank'])}")
-                    if pd.notna(row.get("mteb_overall_score")):
-                        info_parts.append(f"Score {row['mteb_overall_score']:.1f}")
-                    if pd.notna(row.get("dimensions")):
-                        info_parts.append(f"{int(row['dimensions'])}D")
-                    if pd.notna(row.get("size_in_GB")) and isinstance(
-                        row["size_in_GB"], (int, float)
-                    ):
-                        info_parts.append(f"{row['size_in_GB']:.2f}GB")
-
-                    info_str = f"({', '.join(info_parts)})" if info_parts else ""
-                    print(f"     {row['model']} {info_str}")
-
-    if backend in ["all", "fastembed"] and FASTEMBED_AVAILABLE:
-        try:
-            from fastembed import TextEmbedding
-
-            supported_models_raw = TextEmbedding.list_supported_models()
-
-            if include_details:
-                fastembed_df = pd.DataFrame(supported_models_raw)
-                fastembed_df = fastembed_df.drop(
-                    columns=[
-                        "sources",
-                        "tasks",
-                        "description",
-                        "license",
-                        "model_file",
-                        "additional_files",
-                    ],
-                    errors="ignore",
-                )
-
-                if sort_by == "size":
-                    fastembed_df = fastembed_df.sort_values(
-                        "size_in_GB", na_position="last"
-                    )
-                elif sort_by == "name":
-                    fastembed_df = fastembed_df.sort_values("model")
-                elif sort_by == "dimensions":
-                    dim_col = "dim" if "dim" in fastembed_df.columns else "dimensions"
-                    if dim_col in fastembed_df.columns:
-                        fastembed_df = fastembed_df.sort_values(
-                            dim_col, na_position="last"
-                        )
-                else:
-                    fastembed_df = fastembed_df.sort_values(
-                        "size_in_GB", na_position="last"
-                    )
-
-                fastembed_df = fastembed_df.reset_index(drop=True)
-                available_models["fastembed"] = fastembed_df
-            else:
-                fastembed_models = [model["model"] for model in supported_models_raw]
-                available_models["fastembed"] = fastembed_models
-
-            if verbose:
-                count = len(supported_models_raw)
-                print(f"✅ FastEmbed: {count} models available")
-                if include_details:
-                    print("   Sample models with details:")
-                    sample_df = available_models["fastembed"].head(3)
-                    for _, row in sample_df.iterrows():
-                        dims = row.get("dim", row.get("dimensions", "Unknown"))
-                        size = row.get("size_in_GB", "Unknown")
-                        print(f"     {row['model']}: {dims}D, {size}GB")
-                    print(f"     ... and {count-3} more")
-
-        except Exception as e:
-            if verbose:
-                print(f"❌ Could not retrieve FastEmbed models: {e}")
-            available_models["fastembed"] = (
-                [] if not include_details else pd.DataFrame()
-            )
-
-    if backend in ["all", "openai"] and include_api:
-        if OPENAI_AVAILABLE:
-            openai_data = [
-                {
-                    "model": "text-embedding-ada-002",
-                    "dimensions": 1536,
-                    "size_in_GB": "API",
-                    "max_tokens": 8191,
-                    "provider": "openai",
-                },
-                {
-                    "model": "text-embedding-3-small",
-                    "dimensions": 1536,
-                    "size_in_GB": "API",
-                    "max_tokens": 8191,
-                    "provider": "openai",
-                },
-                {
-                    "model": "text-embedding-3-large",
-                    "dimensions": 3072,
-                    "size_in_GB": "API",
-                    "max_tokens": 8191,
-                    "provider": "openai",
-                },
-            ]
-
-            if include_details:
-                openai_df = pd.DataFrame(openai_data)
-                if sort_by == "name":
-                    openai_df = openai_df.sort_values("model")
-                elif sort_by == "dimensions":
-                    openai_df = openai_df.sort_values("dimensions")
-                available_models["openai"] = openai_df
-            else:
-                available_models["openai"] = [model["model"] for model in openai_data]
-
-            if verbose:
-                api_key_set = "✅" if os.getenv("OPENAI_API_KEY") else "❌"
-                print(f"{api_key_set} OpenAI: {len(openai_data)} models available")
-        else:
-            if verbose:
-                print("❌ OpenAI: Not available (install with: pip install openai)")
-            available_models["openai"] = [] if not include_details else pd.DataFrame()
-
-    if backend in ["all", "gemini"] and include_api:
-        if GEMINI_AVAILABLE:
-            gemini_data = [
-                {
-                    "model": "models/embedding-001",
-                    "dimensions": 768,
-                    "size_in_GB": "API",
-                    "max_tokens": 2048,
-                    "provider": "gemini",
-                },
-                {
-                    "model": "models/text-embedding-004",
-                    "dimensions": 768,
-                    "size_in_GB": "API",
-                    "max_tokens": 2048,
-                    "provider": "gemini",
-                },
-            ]
-
-            if include_details:
-                gemini_df = pd.DataFrame(gemini_data)
-                if sort_by == "name":
-                    gemini_df = gemini_df.sort_values("model")
-                available_models["gemini"] = gemini_df
-            else:
-                available_models["gemini"] = [model["model"] for model in gemini_data]
-
-            if verbose:
-                api_key_set = "✅" if os.getenv("GEMINI_API_KEY") else "❌"
-                print(f"{api_key_set} Gemini: {len(gemini_data)} models available")
-        else:
-            if verbose:
-                print(
-                    "❌ Gemini: Not available (install with: pip install google-generativeai)"
-                )
-            available_models["gemini"] = [] if not include_details else pd.DataFrame()
-
-    if backend in ["all", "rapidfuzz"]:
-        if RAPIDFUZZ_AVAILABLE:
-            rapidfuzz_data = [
-                {
-                    "method": "token_sort_ratio",
-                    "description": "Token-based similarity with sorting",
-                },
-                {
-                    "method": "token_set_ratio",
-                    "description": "Token-based similarity with set operations",
-                },
-                {"method": "ratio", "description": "Standard Levenshtein ratio"},
-                {"method": "partial_ratio", "description": "Partial string matching"},
-            ]
-
-            if include_details:
-                rapidfuzz_df = pd.DataFrame(rapidfuzz_data)
-                if sort_by == "name":
-                    rapidfuzz_df = rapidfuzz_df.sort_values("method")
-                available_models["rapidfuzz"] = rapidfuzz_df
-            else:
-                available_models["rapidfuzz"] = [
-                    method["method"] for method in rapidfuzz_data
-                ]
-
-            if verbose:
-                print(f"✅ RapidFuzz: {len(rapidfuzz_data)} methods available")
-        else:
-            if verbose:
-                print(
-                    "❌ RapidFuzz: Not available (install with: pip install rapidfuzz)"
-                )
-            available_models["rapidfuzz"] = (
-                [] if not include_details else pd.DataFrame()
-            )
-
-    if verbose:
-        if include_details:
-            total_models = sum(
-                len(models) if isinstance(models, list) else len(models.index)
-                for models in available_models.values()
-                if len(models) > 0
-            )
-        else:
-            total_models = sum(len(models) for models in available_models.values())
-
-        available_backends = [
-            k
-            for k, v in available_models.items()
-            if (isinstance(v, list) and v)
-            or (isinstance(v, pd.DataFrame) and not v.empty)
-        ]
-        print(
-            f"\n📊 Summary: {total_models} total models across {len(available_backends)} backends"
-        )
-        print(f"Available backends: {', '.join(available_backends)}")
-
-        print("\n💡 Smart Recommendations:")
-        if "sentence-transformers" in available_backends:
-            if use_mteb_data and not mteb_df.empty and include_details:
-                st_df = available_models["sentence-transformers"]
-
-                if sort_by == "size":
-                    lightweight = st_df[
-                        st_df["size_in_GB"].notna() & (st_df["size_in_GB"] < 1.0)
-                    ].head(3)
-                    if not lightweight.empty:
-                        print("   📦 Smallest models:")
-                        for _, row in lightweight.iterrows():
-                            mem_str = (
-                                f"{row['size_in_GB']:.2f}GB"
-                                if pd.notna(row["size_in_GB"])
-                                else "N/A"
-                            )
-                            print(f"     • {row['model']}: {mem_str}")
-                elif sort_by == "performance":
-                    top_mteb = st_df[st_df["mteb_rank"].notna()].head(3)
-                    if not top_mteb.empty:
-                        print("   🏆 Top MTEB performers:")
-                        for _, row in top_mteb.iterrows():
-                            mem_str = (
-                                f"{row['size_in_GB']:.1f}GB"
-                                if pd.notna(row["size_in_GB"])
-                                and isinstance(row["size_in_GB"], (int, float))
-                                else "N/A"
-                            )
-                            print(
-                                f"     • {row['model']}: MTEB #{int(row['mteb_rank'])} ({row['mteb_overall_score']:.1f}), {mem_str}"
-                            )
-                else:
-                    top_models = st_df.head(3)
-                    print(f"   🎯 Top models by {sort_by}:")
-                    for _, row in top_models.iterrows():
-                        print(f"     • {row['model']}")
-
-        if "openai" in available_backends and os.getenv("OPENAI_API_KEY"):
-            print("   🌐 API option: text-embedding-3-small (no local compute needed)")
-
-        if not available_backends:
-            print("   • Install dependencies: pip install alethia[recommended]")
-
-    return available_models
-
-
-def _sort_dataframe(df: pd.DataFrame, sort_by: str) -> pd.DataFrame:
-    """
-    Sort DataFrame based on the specified criteria
-
-    Args:
-        df: DataFrame to sort
-        sort_by: Sorting method ("performance", "size", "name", "dimensions")
-
-    Returns:
-        pd.DataFrame: Sorted DataFrame
-    """
-    if df.empty:
-        return df
-
-    if sort_by == "size":
-
-        def size_sort_key(row):
-            size = row.get("size_in_GB")
-            if pd.isna(size) or not isinstance(size, (int, float)):
-                return (1, 999)
-            return (0, size)
-
-        df["_size_sort_key"] = df.apply(size_sort_key, axis=1)
-        df = df.sort_values("_size_sort_key").drop(columns=["_size_sort_key"])
-
-    elif sort_by == "name":
-        df = df.sort_values("model", na_position="last")
-
-    elif sort_by == "dimensions":
-
-        def dim_sort_key(row):
-            dims = row.get("dimensions")
-            if pd.isna(dims) or not isinstance(dims, (int, float)):
-                return (1, 999)
-            return (0, dims)
-
-        df["_dim_sort_key"] = df.apply(dim_sort_key, axis=1)
-        df = df.sort_values("_dim_sort_key").drop(columns=["_dim_sort_key"])
-
-    elif sort_by == "performance":
-
-        def performance_sort_key(row):
-            if pd.notna(row.get("mteb_rank")):
-                return (0, row["mteb_rank"])
-            elif pd.notna(row.get("size_in_GB")) and isinstance(
-                row["size_in_GB"], (int, float)
-            ):
-                return (1, row["size_in_GB"])
-            else:
-                return (2, 0)
-
-        df["_perf_sort_key"] = df.apply(performance_sort_key, axis=1)
-        df = df.sort_values("_perf_sort_key").drop(columns=["_perf_sort_key"])
-
-    return df.reset_index(drop=True)
-
-
-def _safe_float_convert(value):
-    """Safely convert a value to float, handling 'Unknown' and other non-numeric values"""
-    if pd.isna(value) or value == "Unknown" or value == "":
-        return None
-    try:
-        return float(value)
-    except (ValueError, TypeError):
-        return None
-
-
-def _safe_int_convert(value):
-    """Safely convert a value to int, handling 'Unknown' and other non-numeric values"""
-    if pd.isna(value) or value == "Unknown" or value == "":
-        return None
-    try:
-        return int(float(value))
-    except (ValueError, TypeError):
-        return None
-
-
-def get_models_by_size(
-    backend: str = "sentence-transformers", ascending: bool = True
-) -> pd.DataFrame:
-    """
-    Get models sorted by size
-
-    Args:
-        backend: Backend to get models from
-        ascending: True for smallest first, False for largest first
-
-    Returns:
-        pd.DataFrame: Models sorted by size
-    """
-    models = get_available_models(
-        backend=backend, include_details=True, sort_by="size", verbose=False
-    )
-
-    if backend in models and isinstance(models[backend], pd.DataFrame):
-        df = models[backend].copy()
-        if not ascending:
-            df = df.iloc[::-1].reset_index(drop=True)
-        return df
-
-    return pd.DataFrame()
-
-
-def get_smallest_models(max_size_gb: float = 1.0, top_n: int = 5) -> pd.DataFrame:
-    """
-    Get the smallest models under a size threshold
-
-    Args:
-        max_size_gb: Maximum size in GB
-        top_n: Number of models to return
-
-    Returns:
-        pd.DataFrame: Smallest models under the threshold
-    """
-    models = get_available_models(
-        backend="sentence-transformers",
-        include_details=True,
-        sort_by="size",
-        verbose=False,
-    )
-
-    if "sentence-transformers" in models:
-        df = models["sentence-transformers"]
-        small_models = df[
-            (df["size_in_GB"].notna()) & (df["size_in_GB"] <= max_size_gb)
-        ].head(top_n)
-
-        return small_models
-
-    return pd.DataFrame()

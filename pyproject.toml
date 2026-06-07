@@ -4,14 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "alethia"
-version = "0.1.0"
+version = "0.2.0"
 description = "Package to perform fuzzy matching using language models."
 readme = "README.rst"
 authors = [
-  {name = "Saket Choudhary", email = "saketkc@gmail.com"}
+  {name = "Saket Choudhary", email = "saketc@iitb.ac.in"}
 ]
 maintainers = [
-  {name = "Saket Choudhary", email = "saketkc@gmail.com"}
+  {name = "Saket Choudhary", email = "saketc@iitb.ac.in"}
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -177,7 +177,7 @@ docs = [
     "furo>=2024.1.29",
     "sphinx-autodoc-typehints>=2.0.0",
     "sphinx-copybutton>=0.5.0",
-    "myst-parser>=2.0.0",
+    "myst-nb>=1.0.0",
     "linkify-it-py>=2.0.0",
 ]
 
@@ -185,25 +185,18 @@ docs = [
 [project.urls]
 homepage = "https://github.com/saketlab/alethia"
 repository = "https://github.com/saketlab/alethia"
-documentation = "https://github.com/sakelab/alethia#readme"
+documentation = "https://github.com/saketlab/alethia#readme"
 bugs = "https://github.com/saketlab/alethia/issues"
 changelog = "https://github.com/saketlab/alethia/blob/main/HISTORY.rst"
 
 [project.scripts]
 alethia = "alethia.cli:main"
 
-# UPDATED PACKAGE CONFIGURATION FOR DATA FILES
 [tool.setuptools]
-packages = ["alethia", "alethia.data"]
+packages = ["alethia", "alethia.assess", "alethia.data"]
 
 [tool.setuptools.package-data]
-# Specify data files for the alethia.data package
 "alethia.data" = ["*.csv", "*.json", "*.yml", "*.yaml"]
-# OR more specifically for just your MTEB file:
-# "alethia.data" = ["mteb_dashboard.csv"]
-
-# If you want to include other data files in the main package:
-# "alethia" = ["*.yml", "*.yaml", "config/*.json"]
 
 # MANIFEST.in alternative (if you need more control)
 # You can also create a MANIFEST.in file in your project root:

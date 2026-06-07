@@ -1,5 +1,6 @@
 """Sphinx configuration for Alethia documentation."""
 
+import importlib
 import os
 import sys
 from datetime import datetime
@@ -28,16 +29,17 @@ extensions = [
     "sphinx.ext.coverage",
     "sphinx_autodoc_typehints",
     "sphinx_copybutton",
-    "myst_parser",
+    "myst_nb",
 ]
 
 # Templates
 templates_path = ["_templates"]
 
-# Source files
+# Source files. myst-nb handles both Markdown and notebooks.
 source_suffix = {
     ".rst": "restructuredtext",
-    ".md": "markdown",
+    ".md": "myst-nb",
+    ".ipynb": "myst-nb",
 }
 
 # Master document
@@ -46,8 +48,9 @@ master_doc = "index"
 # Exclude patterns
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
-# Pygments style
-pygments_style = "sphinx"
+# Pygments styles: neutral light background (the "sphinx" style tints code blocks green),
+# monokai for the dark default theme.
+pygments_style = "friendly"
 pygments_dark_style = "monokai"
 
 # -- Autodoc configuration ---------------------------------------------------
@@ -92,22 +95,22 @@ intersphinx_mapping = {
 html_theme = "furo"
 
 html_theme_options = {
+    "navigation_with_keys": True,
+    "sidebar_hide_name": False,
     "light_css_variables": {
-        "color-brand-primary": "#2962FF",
-        "color-brand-content": "#2962FF",
-        "color-code-background": "#f6f8fa",
-        "color-code-foreground": "#24292e",
+        "color-brand-primary": "#1b1b1f",
+        "color-brand-content": "#1b1b1f",
+        "font-stack": '"SF Pro Display", "SF Pro Text", -apple-system, '
+        'BlinkMacSystemFont, "Segoe UI", sans-serif',
+        "font-stack--monospace": '"SF Mono", "JetBrains Mono", Menlo, monospace',
     },
     "dark_css_variables": {
-        "color-brand-primary": "#82B1FF",
-        "color-brand-content": "#82B1FF",
-        "color-code-background": "#1d2128",
-        "color-code-foreground": "#e6edf3",
+        "color-brand-primary": "#f5f5f7",
+        "color-brand-content": "#f5f5f7",
+        "background-color": "#050505",
+        "background-color-secondary": "#121214",
     },
-    "sidebar_hide_name": False,
-    "navigation_with_keys": True,
-    "top_of_page_button": "edit",
-    "source_repository": "https://github.com/saketkc/alethia",
+    "source_repository": "https://github.com/saketlab/alethia",
     "source_branch": "main",
     "source_directory": "docs/",
 }
@@ -120,13 +123,13 @@ html_static_path = ["_static"]
 
 # Custom CSS
 html_css_files = [
-    "custom.css",
+    "css/custom.css",
 ]
 
 # Social links in footer
 html_context = {
     "display_github": True,
-    "github_user": "saketkc",
+    "github_user": "saketlab",
     "github_repo": "alethia",
     "github_version": "main",
     "conf_py_path": "/docs/",
@@ -138,7 +141,7 @@ copybutton_prompt_text = r">>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: 
 copybutton_prompt_is_regexp = True
 copybutton_remove_prompts = True
 
-# -- Options for myst-parser -------------------------------------------------
+# -- Options for MyST / MyST-NB ----------------------------------------------
 
 myst_enable_extensions = [
     "colon_fence",
@@ -147,13 +150,25 @@ myst_enable_extensions = [
     "fieldlist",
     "html_admonition",
     "html_image",
-    "linkify",
     "replacements",
     "smartquotes",
     "strikethrough",
     "substitution",
     "tasklist",
 ]
+
+# Notebook vignettes ship with pre-computed outputs; do not re-execute at build
+# time (avoids downloading models / heavy deps in CI). Matches the varunayan setup.
+nb_execution_mode = "off"
+nb_merge_streams = True
+
+# Mock heavy optional dependencies so autodoc can import alethia without them.
+autodoc_mock_imports = []
+for _module in ("torch", "sentence_transformers", "fastembed", "faiss", "umap"):
+    try:
+        importlib.import_module(_module)
+    except Exception:
+        autodoc_mock_imports.append(_module)
 
 # -- Options for LaTeX output ------------------------------------------------
 

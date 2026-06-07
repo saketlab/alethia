@@ -1,132 +1,72 @@
-=============================
-Alethia Documentation
-=============================
+alethia: model-agnostic entity matching with language-model embeddings
+======================================================================
 
 .. image:: logo.svg
-   :alt: Alethia Logo
-   :width: 200px
+   :alt: alethia logo
+   :width: 180px
    :align: center
 
 |
 
-**Alethia** is a Python package for entity matching, standardization, and visualization using embeddings from large language models.
+**alethia** maps messy entity names (locations, drugs, medical records) to a canonical list
+using embeddings. Bring any model, by name or as a plain function, and it handles the rest.
 
-Alethia helps you clean and standardize messy entity data (like location names, product names, medical records, etc.) by leveraging semantic similarity and embedding visualizations.
+It can also tell you which model fits your data best, without any labels.
 
-Key Features
-============
+Install
+-------
 
-**Entity Matching & Standardization**
-  Align messy entity names with a reference list using semantic similarity
+.. code-block:: bash
 
-**Multiple Embedding Backends**
-  Support for sentence-transformers, FastEmbed, OpenAI, and Google Gemini
+   pip install alethia
 
-**Fuzzy Matching**
-  Built-in fuzzy matching with rapidfuzz and LLM-based alternatives
-
-**Visualization**
-  Reduce dimensionality with PCA/UMAP and create interactive plots
-
-**Model Recommendations**
-  Intelligent model selection based on MTEB benchmark data
-
-Quick Example
-=============
+Match
+-----
 
 .. code-block:: python
 
-    import pandas as pd
-    from alethia import alethia
+   from alethia import alethia
 
-    # Load your data
-    df = pd.read_csv("your_data.csv")
+   references = ["New York", "Los Angeles", "Chicago"]
+   dirty = ["New Yrok", "Los Anglees", "Chicagoo"]
 
-    # Define reference entries (correct, standardized entities)
-    reference_entries = [x for x in set(df["correct_column"]) if str(x) != "nan"]
+   alethia(dirty, references, model="all-MiniLM-L6-v2")
 
-    # Match incorrect entries against reference entries
-    incorrect_entries = df["incorrect_column"].tolist()
-    result = alethia(incorrect_entries, reference_entries)
+Pick a model for your data
+--------------------------
 
-    # View corrected entries
-    corrected = result[result.given_entity != result.alethia_prediction]
-    print(corrected)
+.. code-block:: python
 
-Installation
-============
+   from alethia import assess_models
 
-Install the base package:
+   report = assess_models(dirty, references, models={
+       "minilm": "all-MiniLM-L6-v2",
+       "mpnet": "all-mpnet-base-v2",
+   })
+   report.best.name          # recommended model, chosen without labels
+   report.to_html("report.html")
 
-.. code-block:: bash
-
-    pip install alethia
-
-Or install with specific backends:
-
-.. code-block:: bash
-
-    # CPU-optimized installation
-    pip install alethia[cpu]
-
-    # GPU support
-    pip install alethia[gpu]
-
-    # Full installation (all features)
-    pip install alethia[full]
-
-Table of Contents
-=================
+The examples below work through real public-health datasets.
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Getting Started
+   :maxdepth: 1
+   :caption: Get started
 
    installation
    usage
-   quickstart
 
 .. toctree::
-   :maxdepth: 2
-   :caption: User Guide
-
-   guide/entity_matching
-   guide/embeddings
-   guide/fuzzy_matching
-   guide/visualization
-   guide/model_selection
-
-.. toctree::
-   :maxdepth: 2
-   :caption: API Reference
-
-   api/index
-   api/alethia
-   api/embeddings
-   api/similarity
-   api/fuzzy_match
-   api/stats
-   api/models
-   api/utils
-
-.. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Examples
 
-   examples/basic_matching
-   examples/medical_coding
-   examples/location_standardization
+   notebooks/01_india_district_harmonization
+   notebooks/02_medication_name_standardization
+   notebooks/03_validating_the_assessor
 
 .. toctree::
    :maxdepth: 1
    :caption: Reference
 
-   history
+   api/index
    contributing
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   history

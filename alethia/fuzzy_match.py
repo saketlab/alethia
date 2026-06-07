@@ -3,11 +3,9 @@ fuzzy matching for alethia
 """
 
 import logging
-import sys
 import warnings
-from typing import Dict, List, Optional, Union
+from typing import Dict, List
 
-import numpy as np
 import pandas as pd
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -120,7 +118,7 @@ class FuzzyLibraryManager:
             logger.warning(
                 f"Algorithm {algorithm} not available in {lib_name}, using ratio"
             )
-            return getattr(lib["fuzz"], "ratio")
+            return lib["fuzz"].ratio
 
     def get_process_extract(self):
         """Get the process.extract function"""

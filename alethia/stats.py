@@ -20,19 +20,40 @@ def do_umap(X, n_components=2, random_state=42):
     return reducer.fit_transform(X)
 
 
+def _palette_for(n_categories):
+    """A qualitative palette with at least ``n_categories`` distinct colours."""
+    # Set1 only has 9 colours; tab10/tab20 scale to the larger category counts that
+    # real label sets (e.g. therapeutic classes) reach.
+    if n_categories <= 9:
+        return "Set1"
+    if n_categories <= 10:
+        return "tab10"
+    if n_categories <= 20:
+        return "tab20"
+    return "husl"
+
+
 def plot_embedding(
     X,
     labels=None,
     dims=[1, 2],
-    color_map="Set1",
+    color_map=None,
     title="",
     explained_var=None,
+    axis_labels=None,
     label=False,
     repel=False,
     text_size=8,
     point_size=40,
 ):
-    """Plot embeddings as 2D scatter plot."""
+    """Plot embeddings as a 2D scatter plot.
+
+    Args:
+        color_map: seaborn palette name. If ``None``, a qualitative palette sized to the
+            number of distinct labels is chosen automatically.
+        axis_labels: optional ``(xlabel, ylabel)`` (e.g. ``("UMAP 1", "UMAP 2")``). Falls
+            back to PC labels with explained variance, or the column names.
+    """
     import matplotlib.pyplot as plt
     import pandas as pd
     import seaborn as sns
@@ -46,6 +67,9 @@ def plot_embedding(
 
     if labels is not None and isinstance(labels, list):
         df["labels"] = labels
+
+    if color_map is None and labels is not None:
+        color_map = _palette_for(len(set(labels)))
 
     sns.scatterplot(
         data=df,
@@ -82,9 +106,12 @@ def plot_embedding(
                 plt.text(x_coords[i], y_coords[i], str(txt), fontsize=text_size)
 
     plt.title(title)
-    if explained_var is not None:
-        plt.xlabel(f"PC{dims[0]} ({explained_var[dims[0]-1]:.2f}%)")
-        plt.ylabel(f"PC{dims[1]} ({explained_var[dims[1]-1]:.2f}%)")
+    if axis_labels is not None:
+        plt.xlabel(axis_labels[0])
+        plt.ylabel(axis_labels[1])
+    elif explained_var is not None:
+        plt.xlabel(f"PC{dims[0]} ({explained_var[dims[0] - 1]:.2f}%)")
+        plt.ylabel(f"PC{dims[1]} ({explained_var[dims[1] - 1]:.2f}%)")
     if labels is not None:
         plt.legend(loc="best", bbox_to_anchor=(1.05, 1))
     plt.tight_layout()
