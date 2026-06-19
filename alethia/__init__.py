@@ -7,7 +7,7 @@ __email__ = "saketc@iitb.ac.in"
 
 try:
     __version__ = version("alethia")
-except PackageNotFoundError:  # not installed (e.g. running from a source checkout)
+except PackageNotFoundError:
     __version__ = "0.0.0+unknown"
 
 from .alethia import (
@@ -23,7 +23,6 @@ from .alethia import (
     set_verbose,
 )
 
-# Label-free model assessment (the recommended way to choose a model)
 from .assess import (
     AssessmentReport,
     ModelAssessment,
@@ -31,7 +30,6 @@ from .assess import (
     assessment_table,
 )
 
-# Model-agnostic embedding interface
 from .embedder import (
     CallableEmbedder,
     Embedder,
@@ -39,6 +37,12 @@ from .embedder import (
     match_by_embeddings,
 )
 from .embeddings import get_embeddings
+from .cluster import (
+    ClusterResult,
+    Edge,
+    cluster_entities,
+    mutual_nn_edges,
+)
 from .stats import do_pca, do_umap, plot_embedding, plot_embedding_df
 from .utils import setup_matplotlib
 
@@ -54,6 +58,11 @@ __all__ = [
     "CallableEmbedder",
     "as_embedder",
     "match_by_embeddings",
+    # Entity clustering / deduplication
+    "cluster_entities",
+    "mutual_nn_edges",
+    "ClusterResult",
+    "Edge",
     # Label-free model assessment
     "assess_models",
     "assessment_table",

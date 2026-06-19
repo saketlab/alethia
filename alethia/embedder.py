@@ -266,7 +266,9 @@ def _resolve_named_embedder(
             obj = load_fastembed_model(model_name)
         except Exception:
             return None
-        return FastEmbedEmbedder(obj, name=name or model_name) if obj is not None else None
+        return (
+            FastEmbedEmbedder(obj, name=name or model_name) if obj is not None else None
+        )
 
     def try_sentence_transformers():
         if not SENTENCE_TRANSFORMERS_AVAILABLE:
