@@ -172,9 +172,7 @@ def _suggest_column(columns: Sequence[str]) -> str:
     return columns[0]
 
 
-def _read_entities(
-    path: Path, column: str | None, label: str, flag: str
-) -> list[str]:
+def _read_entities(path: Path, column: str | None, label: str, flag: str) -> list[str]:
     """Read entity strings from a text or tabular file."""
     if not path.exists():
         hints = [f"Check the path and spelling of [cyan]{path}[/cyan]."]
@@ -272,7 +270,9 @@ def _read_pair(
     """Read the (messy, reference) file pair that ``match`` and ``assess`` both take."""
     return (
         _read_entities(messy_file, column, "Messy entries", "--column"),
-        _read_entities(reference_file, reference_column, "Reference", "--reference-column"),
+        _read_entities(
+            reference_file, reference_column, "Reference", "--reference-column"
+        ),
     )
 
 
@@ -462,7 +462,10 @@ def match(
         None, "--reference-column", "-r", help="Column in the reference file."
     ),
     output: Path | None = typer.Option(
-        None, "--output", "-o", help="Save every result to this file (.csv/.tsv/.json/.xlsx)."
+        None,
+        "--output",
+        "-o",
+        help="Save every result to this file (.csv/.tsv/.json/.xlsx).",
     ),
     model: str = typer.Option(
         DEFAULT_MATCH_MODEL,
@@ -480,8 +483,12 @@ def match(
         help="Minimum score to accept a match. Defaults to 0.7 for embedding models; "
         "spelling-based matching returns its best guess unless you set this.",
     ),
-    limit: int = typer.Option(20, "--limit", "-n", min=1, help="Rows to show on screen."),
-    verbose: bool = typer.Option(False, "--verbose", "-v", help="Show detailed progress."),
+    limit: int = typer.Option(
+        20, "--limit", "-n", min=1, help="Rows to show on screen."
+    ),
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", help="Show detailed progress."
+    ),
 ) -> None:
     """Fix messy entries by matching them to a list of correct ones.
 
@@ -547,7 +554,9 @@ def match(
             "Or use fast spelling-based matching instead: [cyan]--model rapidfuzz[/cyan]",
         )
     else:
-        _note(f"Using model [cyan]{model}[/cyan] (first run downloads it, then it's cached).")
+        _note(
+            f"Using model [cyan]{model}[/cyan] (first run downloads it, then it's cached)."
+        )
 
     with console.status(f"[cyan]Matching {len(messy)} entries...", spinner="dots"):
         try:
@@ -587,7 +596,9 @@ def match(
     if output:
         _write_output(results, output)
     elif _interactive() and Confirm.ask("\nSave all results to a file?", default=False):
-        _write_output(results, Path(Prompt.ask("Save as", default="alethia_results.csv")))
+        _write_output(
+            results, Path(Prompt.ask("Save as", default="alethia_results.csv"))
+        )
 
 
 @app.command()
@@ -612,7 +623,9 @@ def cluster(
         max=1.0,
         help="How similar two entries must be to group. Higher groups less.",
     ),
-    limit: int = typer.Option(20, "--limit", "-n", min=1, help="Groups to show on screen."),
+    limit: int = typer.Option(
+        20, "--limit", "-n", min=1, help="Groups to show on screen."
+    ),
 ) -> None:
     """Group duplicate entries together when you have no correct list.
 
@@ -651,7 +664,9 @@ def cluster(
         "Grouping needs an embedding model, which is not installed.",
         f"Try: [cyan]pip install '{EXTRA_RECOMMENDED}'[/cyan]",
     )
-    _note(f"Using model [cyan]{model}[/cyan] (first run downloads it, then it's cached).")
+    _note(
+        f"Using model [cyan]{model}[/cyan] (first run downloads it, then it's cached)."
+    )
 
     from .cluster import cluster_entities
 
@@ -873,7 +888,9 @@ def check() -> None:
 
     for name, ok, purpose in features:
         table.add_row(
-            name, "[green]+ ready[/green]" if ok else "[yellow]- missing[/yellow]", purpose
+            name,
+            "[green]+ ready[/green]" if ok else "[yellow]- missing[/yellow]",
+            purpose,
         )
 
     console.print()
@@ -916,9 +933,7 @@ def models(
     """
     from .alethia import get_available_models
 
-    table = Table(
-        title="Embedding models", header_style="bold", border_style="dim"
-    )
+    table = Table(title="Embedding models", header_style="bold", border_style="dim")
     table.add_column("Model name (pass to --model)", overflow="fold")
     table.add_column("Backend", style="dim")
 

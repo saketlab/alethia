@@ -9,6 +9,7 @@ def do_pca(
 ) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
     """Reduce ``X`` to 2 principal components."""
     from sklearn.decomposition import PCA
+
     pca = PCA(n_components=n_components)
     X_pca = pca.fit_transform(X)
     explained_var = pca.explained_variance_ratio_ * 100
@@ -109,8 +110,8 @@ def plot_embedding(
     if explained_var is not None:
         if not isinstance(explained_var, (list, np.ndarray)) or len(explained_var) < 2:
             raise ValueError("explained_var must be a list with at least two values.")
-        plt.xlabel(f"PC{dims[0]} ({explained_var[dims[0]-1]:.2f}%)")
-        plt.ylabel(f"PC{dims[1]} ({explained_var[dims[1]-1]:.2f}%)")
+        plt.xlabel(f"PC{dims[0]} ({explained_var[dims[0] - 1]:.2f}%)")
+        plt.ylabel(f"PC{dims[1]} ({explained_var[dims[1] - 1]:.2f}%)")
 
     if labels is not None:
         plt.legend(loc="best", bbox_to_anchor=(1.05, 1), borderaxespad=0.0)

@@ -203,11 +203,16 @@ class NoiseProfile:
 
     def population(self) -> tuple[list[Callable], list[float]]:
         """Return the (perturbation, weight) population for ``random.Random.choices``."""
-        pairs = [(_PERTURBATION_REGISTRY[n], w) for n, w in self.weights.items()
-                 if w > 0 and n in _PERTURBATION_REGISTRY]
+        pairs = [
+            (_PERTURBATION_REGISTRY[n], w)
+            for n, w in self.weights.items()
+            if w > 0 and n in _PERTURBATION_REGISTRY
+        ]
         if not pairs:
-            pairs = [(_PERTURBATION_REGISTRY[n], w)
-                     for n, w in _DEFAULT_PROFILE_WEIGHTS.items()]
+            pairs = [
+                (_PERTURBATION_REGISTRY[n], w)
+                for n, w in _DEFAULT_PROFILE_WEIGHTS.items()
+            ]
         fns, weights = zip(*pairs)
         return list(fns), list(weights)
 

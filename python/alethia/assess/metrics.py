@@ -1,6 +1,5 @@
 """Label-free embedding quality metrics for entity matching."""
 
-
 import numpy as np
 
 from ..embedder import l2_normalize, rank_key, top_k_stable
@@ -16,14 +15,15 @@ def _ensure_normalized(arr: np.ndarray, *, normalized: bool = False) -> np.ndarr
     return l2_normalize(arr)
 
 
-
-
 #: 4096 x n float64 stays under a GB
 _BLOCK_ROWS = 4096
 #: sorting and partitioning copy their input, so blocks stay near 20 MB
 _RETRIEVAL_BLOCK_ROWS = 128
 
-def _nearest_other_similarity(emb: np.ndarray, block_rows: int = _BLOCK_ROWS) -> np.ndarray:
+
+def _nearest_other_similarity(
+    emb: np.ndarray, block_rows: int = _BLOCK_ROWS
+) -> np.ndarray:
     """Cosine similarity from each row to its nearest *other* row."""
     n = emb.shape[0]
     out = np.empty(n, dtype=np.float64)
@@ -126,8 +126,6 @@ def intrinsic_dimensionality(emb: np.ndarray) -> dict[str, float]:
     }
 
 
-
-
 def alignment_loss(
     src_emb: np.ndarray, var_emb: np.ndarray, alpha: float = 2.0
 ) -> float:
@@ -167,7 +165,11 @@ def positive_pair_rank(
 
 
 def uniformity_loss(
-    emb: np.ndarray, t: float = 2.0, max_points: int = 2000, *, _normalized: bool = False
+    emb: np.ndarray,
+    t: float = 2.0,
+    max_points: int = 2000,
+    *,
+    _normalized: bool = False,
 ) -> float:
     """Uniformity ``log E exp(-t * ||x-y||^2)`` over pairs; more negative is better.
 
@@ -191,18 +193,22 @@ def uniformity_loss(
     return float(np.log(total / pairs))
 
 
-
-
 def _query_ref_sims(
     query_emb: np.ndarray, ref_emb: np.ndarray, *, normalized: bool = False
 ) -> np.ndarray:
-    return (_ensure_normalized(query_emb, normalized=normalized)
-            @ _ensure_normalized(ref_emb, normalized=normalized).T)
+    return (
+        _ensure_normalized(query_emb, normalized=normalized)
+        @ _ensure_normalized(ref_emb, normalized=normalized).T
+    )
 
 
 def retrieval_margin(
-    query_emb: np.ndarray, ref_emb: np.ndarray, low_margin_z: float = 1.0, *,
-    _normalized: bool = False, _sims: np.ndarray | None = None,
+    query_emb: np.ndarray,
+    ref_emb: np.ndarray,
+    low_margin_z: float = 1.0,
+    *,
+    _normalized: bool = False,
+    _sims: np.ndarray | None = None,
 ) -> dict[str, float]:
     """Top-1 vs top-2 margin per query, in raw cosine and in standard deviations.
 
@@ -210,8 +216,11 @@ def retrieval_margin(
     anisotropy; the ``_z`` variants divide by the per-query spread and compare fairly
     across models, which is why the composite weights those.
     """
-    sims = (_query_ref_sims(query_emb, ref_emb, normalized=_normalized)
-            if _sims is None else _sims)
+    sims = (
+        _query_ref_sims(query_emb, ref_emb, normalized=_normalized)
+        if _sims is None
+        else _sims
+    )
     if sims.shape[1] < 2:
         return {
             "mean_margin": 0.0,
@@ -241,8 +250,12 @@ def retrieval_margin(
 
 
 def hubness(
-    query_emb: np.ndarray, ref_emb: np.ndarray, k: int = 5, *,
-    _normalized: bool = False, _sims: np.ndarray | None = None,
+    query_emb: np.ndarray,
+    ref_emb: np.ndarray,
+    k: int = 5,
+    *,
+    _normalized: bool = False,
+    _sims: np.ndarray | None = None,
 ) -> dict[str, float]:
     """Skewness of the k-occurrence distribution; high means pathological hubs.
 
@@ -268,8 +281,12 @@ def hubness(
 
 
 def mutual_nn_rate(
-    query_emb: np.ndarray, ref_emb: np.ndarray, k: int = 5, *,
-    _normalized: bool = False, _sims: np.ndarray | None = None,
+    query_emb: np.ndarray,
+    ref_emb: np.ndarray,
+    k: int = 5,
+    *,
+    _normalized: bool = False,
+    _sims: np.ndarray | None = None,
 ) -> float:
     """Fraction of query->ref top-1 assignments that are reciprocated within ref top-k."""
     q = _ensure_normalized(query_emb, normalized=_normalized)
@@ -292,8 +309,11 @@ def mutual_nn_rate(
     # the _sims branch gathers columns, copying (nq, block)
     for start in range(0, len(chosen_refs), _RETRIEVAL_BLOCK_ROWS):
         stop = min(start + _RETRIEVAL_BLOCK_ROWS, len(chosen_refs))
-        block = (r[chosen_refs[start:stop]] @ q.T if _sims is None
-                else _sims[:, chosen_refs[start:stop]].T)
+        block = (
+            r[chosen_refs[start:stop]] @ q.T
+            if _sims is None
+            else _sims[:, chosen_refs[start:stop]].T
+        )
         topk[start:stop] = top_k_stable(block, k)
 
     # topk[inverse] is (nq, k): each query's chosen reference's top-k queries

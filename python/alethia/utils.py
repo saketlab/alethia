@@ -56,6 +56,7 @@ def get_gpu_usage() -> dict[str, str | float]:
         / (1024**3),
     }
 
+
 def print_resource_usage(prefix: str = ""):
     """Log current system and GPU usage, tagged with ``prefix``."""
     label = f"{prefix} " if prefix else ""

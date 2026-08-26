@@ -164,7 +164,9 @@ def load_fastembed_model(model_name: str):
 
         model = TextEmbedding(model_name=fastembed_model_name)
         if _VERBOSE_MODE:
-            logger.info(f"[ok] Successfully loaded {fastembed_model_name} with FastEmbed")
+            logger.info(
+                f"[ok] Successfully loaded {fastembed_model_name} with FastEmbed"
+            )
         return model
 
     except Exception as e:
@@ -288,11 +290,7 @@ def _run_api_matching(
         logger.info(f"Computing {label} reference embeddings...")
 
     def _iter(items, desc):
-        return (
-            tqdm(items, desc=desc)
-            if (_VERBOSE_MODE or len(items) > 20)
-            else items
-        )
+        return tqdm(items, desc=desc) if (_VERBOSE_MODE or len(items) > 20) else items
 
     reference_embeddings = {
         ref: np.array(embed(ref))
@@ -371,6 +369,7 @@ def run_gemini_matching(
         "Gemini",
         threshold,
     )
+
 
 def optimized_batch_matching(
     dirty_entries, reference_entries, model_obj, backend, threshold=DEFAULT_THRESHOLD
@@ -663,13 +662,19 @@ def alethia(
         elif model == "openai" or backend == "openai":
             model_name = kwargs.get("model_name", "text-embedding-ada-002")
             model_results = run_openai_matching(
-                remaining_for_model, clean_reference_entries, model_name, scored_threshold
+                remaining_for_model,
+                clean_reference_entries,
+                model_name,
+                scored_threshold,
             )
             backend = effective_backend = "openai"
         elif model == "gemini" or backend == "gemini":
             model_name = kwargs.get("model_name", "models/embedding-001")
             model_results = run_gemini_matching(
-                remaining_for_model, clean_reference_entries, model_name, scored_threshold
+                remaining_for_model,
+                clean_reference_entries,
+                model_name,
+                scored_threshold,
             )
             backend = effective_backend = "gemini"
         elif not isinstance(model, str):
@@ -1228,7 +1233,7 @@ def get_available_models(
                         dims = row.get("dim", row.get("dimensions", "Unknown"))
                         size = row.get("size_in_GB", "Unknown")
                         print(f"     {row['model']}: {dims}D, {size}GB")
-                    print(f"     ... and {count-3} more")
+                    print(f"     ... and {count - 3} more")
 
         except Exception as e:
             if verbose:

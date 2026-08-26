@@ -43,7 +43,11 @@ class LabeledDataset:
     @property
     def nil_rate(self) -> float:
         """Fraction of queries with no correct answer."""
-        return (sum(t is None for t in self.truth) / len(self.truth)) if self.truth else 0.0
+        return (
+            (sum(t is None for t in self.truth) / len(self.truth))
+            if self.truth
+            else 0.0
+        )
 
 
 @dataclass
@@ -124,12 +128,15 @@ def true_accuracy(
             rr_sum += 1.0 / (rank + 1)
 
     n = len(queries)
-    out = {"top1": top1 / n,
-           "mrr": (rr_sum / n_answerable) if n_answerable else float("nan")}
+    out = {
+        "top1": top1 / n,
+        "mrr": (rr_sum / n_answerable) if n_answerable else float("nan"),
+    }
     if has_nil:
         out["nil_recall"] = nil_hits / nil_total if nil_total else float("nan")
-        out["answerable_top1"] = (answerable_hits / n_answerable
-                                  if n_answerable else float("nan"))
+        out["answerable_top1"] = (
+            answerable_hits / n_answerable if n_answerable else float("nan")
+        )
     return out
 
 
@@ -228,8 +235,9 @@ def validate_assessor(
         )
         score_by_model = {a.name: a.score for a in report.assessments if not a.error}
         for name, emb in embedders.items():
-            acc = true_accuracy(ds.queries, ds.references, ds.truth, emb,
-                                nil_threshold=nil_threshold)
+            acc = true_accuracy(
+                ds.queries, ds.references, ds.truth, emb, nil_threshold=nil_threshold
+            )
             rows.append(
                 {
                     "dataset": ds.name,

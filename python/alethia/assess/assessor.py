@@ -125,7 +125,9 @@ def _family_normalized_weights(
     usable = [k for k in weights if k in available and weights[k] > 0]
     by_family: dict[str, list[str]] = {}
     for key in usable:
-        by_family.setdefault(_METRICS[key].family if key in _METRICS else key, []).append(key)
+        by_family.setdefault(
+            _METRICS[key].family if key in _METRICS else key, []
+        ).append(key)
 
     scaled: dict[str, float] = {}
     for family, keys in by_family.items():
@@ -181,11 +183,15 @@ def _assess_one(
     if len(queries) > 0:
         q_norm = metrics_mod.l2_normalize(q_emb)
         qr_sims = q_norm @ r_norm.T
-        out.update(metrics_mod.retrieval_margin(
-            q_norm, r_norm, _normalized=True, _sims=qr_sims))
+        out.update(
+            metrics_mod.retrieval_margin(
+                q_norm, r_norm, _normalized=True, _sims=qr_sims
+            )
+        )
         out.update(metrics_mod.hubness(q_norm, r_norm, _normalized=True, _sims=qr_sims))
         out["mutual_nn_rate"] = metrics_mod.mutual_nn_rate(
-            q_norm, r_norm, _normalized=True, _sims=qr_sims)
+            q_norm, r_norm, _normalized=True, _sims=qr_sims
+        )
 
     out["embedding_dim"] = float(embedder.dim or 0)
     return out
@@ -208,7 +214,9 @@ def _composite_scores(
     if family_normalize:
         available = set()
         for key in {k for a in valid for k in a.metrics}:
-            vals = np.array([a.metrics.get(key, np.nan) for a in valid], dtype=np.float64)
+            vals = np.array(
+                [a.metrics.get(key, np.nan) for a in valid], dtype=np.float64
+            )
             finite = vals[np.isfinite(vals)]
             if finite.size >= 2 and np.std(finite) > 0:
                 available.add(key)
@@ -264,7 +272,9 @@ def assess_models(
     assessments: list[ModelAssessment] = []
     for name, spec in models.items():
         try:
-            embedder = CachingEmbedder(as_embedder(spec, force_cpu=force_cpu, name=name))
+            embedder = CachingEmbedder(
+                as_embedder(spec, force_cpu=force_cpu, name=name)
+            )
             metrics = _assess_one(
                 embedder,
                 queries,
