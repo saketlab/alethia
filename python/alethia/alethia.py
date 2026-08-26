@@ -557,7 +557,18 @@ def alethia(
     remove_identical_hits: bool = False,
     **kwargs,
 ) -> pd.DataFrame:
-    """Match each dirty entry to its closest reference entry."""
+    """Match each dirty entry to its closest reference entry.
+
+    Args:
+        model: ``"rapidfuzz"``, a model name, ``"openai"``, ``"gemini"``, a loaded
+            model, or an ``embed_fn``.
+        threshold: Minimum accepted score. ``None`` gives models 0.7 and rapidfuzz its
+            best guess, unscored.
+
+    Returns:
+        A frame of ``given_entity``, ``alethia_prediction``, ``alethia_score`` in input
+        order. Run metadata rides on ``.attrs``.
+    """
     old_verbose = _VERBOSE_MODE
     if verbose:
         set_verbose(True)

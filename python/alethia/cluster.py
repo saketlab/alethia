@@ -170,7 +170,13 @@ def cluster_entities(
     canonical: str = "shortest",
     force_cpu: bool = True,
 ) -> ClusterResult:
-    """Cluster entity strings into canonical groups via mutual-NN merge edges."""
+    """Cluster entity strings into canonical groups via mutual-NN merge edges.
+
+    Args:
+        k: Neighbourhood size; larger merges more aggressively.
+        min_confidence: Drop edges below this before clustering.
+        canonical: Cluster name: ``"shortest"`` member or ``"first"`` seen.
+    """
     uniq = list(dict.fromkeys(str(e) for e in entities))
     embedder: Embedder = as_embedder(model, force_cpu=force_cpu)
     emb = np.asarray(embedder.encode(uniq))

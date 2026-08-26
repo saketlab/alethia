@@ -430,7 +430,7 @@ def _welcome() -> None:
 def main(
     ctx: typer.Context,
     version: bool = typer.Option(
-        False, "--version", "-V", help="Show the installed version and exit."
+        False, "--version", "-V", help="Show the version and exit."
     ),
 ) -> None:
     """[bold]alethia[/bold] - clean up messy lists of names using AI embeddings.
@@ -449,14 +449,14 @@ def main(
 def match(
     messy_file: Path | None = typer.Argument(
         None,
-        help="File with the messy entries to fix (.csv, .tsv, .xlsx, or .txt).",
+        help="Messy entries to fix (.csv, .tsv, .xlsx, .txt).",
     ),
     reference_file: Path | None = typer.Argument(
         None,
-        help="File with the correct entries to match against.",
+        help="Correct entries to match against.",
     ),
     column: str | None = typer.Option(
-        None, "--column", "-c", help="Column in the messy file holding the entries."
+        None, "--column", "-c", help="Column holding the messy entries."
     ),
     reference_column: str | None = typer.Option(
         None, "--reference-column", "-r", help="Column in the reference file."
@@ -465,14 +465,13 @@ def match(
         None,
         "--output",
         "-o",
-        help="Save every result to this file (.csv/.tsv/.json/.xlsx).",
+        help="Save all results here (.csv/.tsv/.json/.xlsx).",
     ),
     model: str = typer.Option(
         DEFAULT_MATCH_MODEL,
         "--model",
         "-m",
-        help="'rapidfuzz' for fast spelling-based matching, or an embedding model "
-        "name for meaning-based matching.",
+        help="'rapidfuzz' to match on spelling, or a model name to match on meaning.",
     ),
     threshold: float | None = typer.Option(
         None,
@@ -480,8 +479,8 @@ def match(
         "-t",
         min=0.0,
         max=1.0,
-        help="Minimum score to accept a match. Defaults to 0.7 for embedding models; "
-        "spelling-based matching returns its best guess unless you set this.",
+        help="Minimum score to accept. Unset, models use 0.7 and rapidfuzz takes its "
+        "best guess.",
     ),
     limit: int = typer.Option(
         20, "--limit", "-n", min=1, help="Rows to show on screen."
@@ -604,7 +603,7 @@ def match(
 @app.command()
 def cluster(
     entities_file: Path | None = typer.Argument(
-        None, help="File with the entries to group (.csv, .tsv, .xlsx, or .txt)."
+        None, help="Entries to group (.csv, .tsv, .xlsx, .txt)."
     ),
     column: str | None = typer.Option(
         None, "--column", "-c", help="Column holding the entries."
@@ -621,7 +620,7 @@ def cluster(
         "-s",
         min=0.0,
         max=1.0,
-        help="How similar two entries must be to group. Higher groups less.",
+        help="Similarity needed to group. Higher groups less.",
     ),
     limit: int = typer.Option(
         20, "--limit", "-n", min=1, help="Groups to show on screen."
@@ -727,7 +726,7 @@ def assess(
         None,
         "--models",
         "-m",
-        help="Comma-separated model names to compare. Defaults to two small ones.",
+        help="Comma-separated models to compare. Defaults to two small ones.",
     ),
     column: str | None = typer.Option(
         None, "--column", "-c", help="Column in the messy file."
@@ -736,7 +735,7 @@ def assess(
         None, "--reference-column", "-r", help="Column in the reference file."
     ),
     output: Path | None = typer.Option(
-        None, "--output", "-o", help="Save the full scoring table (.csv or .html)."
+        None, "--output", "-o", help="Save the scoring table (.csv or .html)."
     ),
 ) -> None:
     """Work out which embedding model performs best on [bold]your[/bold] data.

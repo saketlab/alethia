@@ -78,10 +78,9 @@ class MetricSpec:
 
     Attributes:
         orientation: +1 if higher-is-better, -1 if lower-is-better.
-        family: Latent property probed. Correlated views of one property share a family,
-            and weights are normalized *within* it.
-        weight: Weight within the family. ``0.0`` reports the metric without scoring it.
-        transform: Applied before scoring, for metrics whose distance from zero matters.
+        family: Latent property probed; weights normalize within it.
+        weight: Weight within the family; ``0.0`` reports without scoring.
+        transform: Applied before scoring, when distance from zero is what matters.
     """
 
     orientation: int
@@ -260,7 +259,18 @@ def assess_models(
     noise_profile: NoiseProfile | None = None,
     estimate_noise: bool = True,
 ) -> AssessmentReport:
-    """Assess candidate embedding models on a dataset, label-free."""
+    """Assess candidate embedding models on a dataset, label-free.
+
+    Args:
+        queries: May be empty, to score reference geometry alone.
+        models: Display name -> anything :func:`~alethia.embedder.as_embedder` takes.
+        family_normalize: Cap each family at its weight, so correlated metrics do not
+            count twice.
+        estimate_noise: Derive the perturbation mix from the query/reference gap.
+
+    Returns:
+        An :class:`AssessmentReport`.
+    """
     queries = [q for q in queries if isinstance(q, str) and q.strip()]
     references = [r for r in references if isinstance(r, str) and r.strip()]
     weights = weights or dict(_DEFAULT_WEIGHTS)
