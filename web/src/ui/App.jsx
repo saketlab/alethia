@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Badge, Box, Button, Callout, Card, Container, Flex, Heading, IconButton, Progress,
+  Badge, Box, Button, Callout, Card, Container, Flex, Heading, IconButton, Link, Progress,
   Section,
   SegmentedControl, Separator, Tabs, Text,
 } from '@radix-ui/themes';
@@ -442,6 +442,10 @@ function Footer() {
 }
 
 const REPO_URL = "https://github.com/saketlab/alethia";
+const DOCS = [
+  { label: "Python", href: "https://alethia.saketlab.org/cli/python/" },
+  { label: "R", href: "https://alethia.saketlab.org/cli/R/" },
+];
 
 function Header({ appearance }) {
   return (
@@ -452,6 +456,18 @@ function Header({ appearance }) {
           <Badge color="gray" variant="soft" radius="full">runs in your browser</Badge>
         </Flex>
         <Flex align="center" gap="3">
+          {DOCS.map(({ label, href }) => (
+            <Link
+              key={label}
+              href={href}
+              size="2"
+              color="gray"
+              highContrast
+              title={`alethia for ${label}`}
+            >
+              {label}
+            </Link>
+          ))}
           <IconButton
             asChild
             size="2"

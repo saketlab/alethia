@@ -50,6 +50,12 @@ extra:
   descriptions:
     "": Matching, label-free model choice, and clustering, on small examples.
   social:
+    - icon: material/web
+      link: https://alethia.saketlab.org/
+      name: alethia in the browser
+    - icon: fontawesome/brands/r-project
+      link: https://alethia.saketlab.org/cli/R/
+      name: alethia for R
     - icon: fontawesome/regular/building
       link: https://github.com/saketlab
       name: saketlab
@@ -67,3 +73,5 @@ markdown_extensions:
 
 nav:
   - Quickstart: index.ipynb
+  - Web app: https://alethia.saketlab.org/
+  - alethia for R: https://alethia.saketlab.org/cli/R/
