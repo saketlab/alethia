@@ -3,6 +3,9 @@ url: https://alethia.saketlab.org/cli/R
 template:
   bootstrap: 5
 
+# pandoc 2.9 on the build host cannot produce the per-page markdown these need
+llm-docs: false
+
 home:
   title: alethia for R
   description: >
@@ -11,9 +14,12 @@ home:
 
 navbar:
   structure:
-    left: [reference, articles]
+    left: [quickstart]
     right: [python, web, github]
   components:
+    quickstart:
+      text: Quickstart
+      href: articles/quickstart.html
     python:
       text: Python
       href: https://alethia.saketlab.org/cli/python/

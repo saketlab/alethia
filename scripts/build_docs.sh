@@ -28,7 +28,7 @@ done
 if [ "$EXECUTE" -eq 1 ]; then
   echo "Executing notebooks..."
   jupyter nbconvert --to notebook --execute --inplace \
-    --ExecutePreprocessor.timeout=900 docs/notebooks/*.ipynb
+    --ExecutePreprocessor.timeout=900 $(find docs -name '*.ipynb' -not -path '*/.ipynb_checkpoints/*')
 fi
 
 if [ "$SERVE" -eq 1 ]; then

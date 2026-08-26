@@ -20,7 +20,10 @@ Suggests:
     igraph,
     onnxr,
     tok,
-    hfhub
+    hfhub,
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
 Config/testthat/edition: 3
 RoxygenNote: 8.0.0
 URL: https://alethia.saketlab.org/cli/R, https://github.com/saketlab/alethia

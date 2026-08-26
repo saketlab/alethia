@@ -1,0 +1,76 @@
+---
+title: "Quickstart"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Quickstart}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+library(alethiaR)
+```
+
+## Match against a reference list
+
+The default matches on spelling and needs no model.
+
+```{r}
+messy <- c("New Yrok", "Los Angelos", "Chicagoo", "Houston")
+reference <- c("New York", "Los Angeles", "Chicago", "Houston", "Phoenix")
+
+alethia(messy, reference)
+```
+
+## Match on meaning
+
+`as_embedder()` takes any function returning one row per string, so no download is
+needed to see the embedding path work. A character-count embedder stands in for a
+real model here.
+
+```{r}
+char_bag <- function(x) {
+  t(vapply(strsplit(tolower(x), ""), function(ch) {
+    tabulate(match(ch, c(letters, " ")), 27)
+  }, numeric(27)))
+}
+
+match_by_embeddings(messy, reference, char_bag)
+```
+
+Pass a model name instead once an ONNX backend is registered; see
+`?set_embedding_backend`.
+
+## Choose a model without labels
+
+`assess_models()` scores candidates on your own data. The composite is relative,
+so it needs at least two.
+
+```{r}
+reversed <- function(x) {
+  char_bag(vapply(strsplit(x, ""), function(ch) paste(rev(ch), collapse = ""), ""))
+}
+
+res <- assess_models(messy, reference, list(char_bag = char_bag, reversed = reversed))
+res$table[, c("model", "score", "mean_margin_z", "mutual_nn_rate")]
+```
+
+```{r}
+res$best
+```
+
+## Cluster without a reference list
+
+Edges need mutual nearest-neighbour agreement, and each carries a confidence.
+
+```{r}
+entities <- c("Bombay", "Bombay City", "Calcutta", "Calcutta City", "Madras")
+clusters <- cluster_entities(entities, char_bag, floor = 0.9)
+
+clusters$clusters
+```
+
+```{r}
+clusters$edges
+```

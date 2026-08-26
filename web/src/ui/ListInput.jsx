@@ -38,10 +38,8 @@ export function ListInput({ title, hint, placeholder, value, onChange, count }) 
         />
         <LiveRegion>{announced > 0 ? `${title}: ${entryLabel(announced)}` : ''}</LiveRegion>
         <Flex align="center" gap="2">
-          {/* The input lives inside the label rather than beside it, and is clipped
-              rather than display:none. display:none takes it out of the tab order, which
-              silently made this control mouse-only: a <label> is not focusable, so there
-              was nothing left for a keyboard to reach. */}
+          {/* display:none would drop the input from the tab order, and a <label> is not
+              focusable, so clip it instead. */}
           <Button asChild variant="soft" size="1" color="gray" className="file-trigger">
             <label style={{ cursor: 'pointer' }}>
               <UploadIcon aria-hidden /> Load a file

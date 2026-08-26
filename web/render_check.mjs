@@ -63,6 +63,7 @@ function render(hash, label, checks) {
 
 render('#/match', 'match', [
   'alethia', 'Messy entries', 'Correct entries', 'never leave this device',
+  'alethia on GitHub', 'github.com/saketlab/alethia',
   'Run ', 'Minimum score', 'Choose a model',
   'System', 'Light', 'Dark',
 ]);

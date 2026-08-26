@@ -132,9 +132,7 @@ export function matchByEmbeddings(queries, references, queryEmb, refEmb, thresho
 /**
  * Merge edges between entities that are mutual nearest neighbours.
  *
- * Agreement in both directions, so no hub chains the whole set into one cluster the way
- * a plain threshold does. Each edge carries a confidence, and the similarity rows are
- * streamed rather than stored.
+ * Mutual agreement stops one hub from chaining every entity into a single cluster.
  */
 export function mutualNnEdges(emb, { floor = 0.8, k = 5, requireMutual = true } = {}) {
   const x = l2Normalize(emb);

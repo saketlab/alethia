@@ -144,10 +144,8 @@ export default function MatchView({
             </Box>
           </Flex>
 
-          {/* The action sits on its own line rather than inline with the fields. The two
-              field boxes are now different heights, so aligning a third column against
-              them meant a hand-picked top offset that drifted at every wrap point, and
-              one unmistakable primary action reads better here than three peers. */}
+          {/* The field boxes differ in height, so a third inline column needs a top offset
+              that drifts at every wrap point. */}
           <Flex gap="2" align="center" wrap="wrap">
             <Button size="3" disabled={!ready} onClick={run}>
               <PlayIcon aria-hidden /> Run {selected?.label}
@@ -251,11 +249,8 @@ function MatchResultsView({ result }) {
           </Callout.Root>
         )}
 
-        {/* Table.Root already wraps its table in a ScrollArea. The extra vertical-only
-            ScrollArea that used to sit here nested a second scroller inside the first and
-            then forbade the horizontal axis the inner one needed on a narrow screen.
-            Letting the page scroll instead also keeps browser find-in-page working across
-            the whole result set, which a 420px window quietly broke. */}
+        {/* Table.Root already provides a ScrollArea. A second one nested here kills the
+            horizontal axis on narrow screens and breaks find-in-page. */}
         <Table.Root variant="surface" size="2">
           <Table.Header>
             <Table.Row>

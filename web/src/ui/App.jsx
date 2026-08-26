@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Badge, Box, Button, Callout, Card, Container, Flex, Heading, Progress, Section,
+  Badge, Box, Button, Callout, Card, Container, Flex, Heading, IconButton, Progress,
+  Section,
   SegmentedControl, Separator, Tabs, Text,
 } from '@radix-ui/themes';
 import {
-  CrossCircledIcon, DownloadIcon, FileTextIcon, InfoCircledIcon, MagicWandIcon,
+  CrossCircledIcon, DownloadIcon, FileTextIcon, GitHubLogoIcon, InfoCircledIcon,
+  MagicWandIcon,
   ReloadIcon,
 } from '@radix-ui/react-icons';
 
@@ -439,6 +441,8 @@ function Footer() {
   );
 }
 
+const REPO_URL = "https://github.com/saketlab/alethia";
+
 function Header({ appearance }) {
   return (
     <Flex direction="column" gap="2">
@@ -447,7 +451,24 @@ function Header({ appearance }) {
           <Heading as="h1" size="7" weight="bold" trim="start">alethia</Heading>
           <Badge color="gray" variant="soft" radius="full">runs in your browser</Badge>
         </Flex>
-        {appearance && (
+        <Flex align="center" gap="3">
+          <IconButton
+            asChild
+            size="2"
+            variant="ghost"
+            color="gray"
+            aria-label="alethia on GitHub"
+          >
+            <a
+              href={REPO_URL}
+              target="_blank"
+              rel="noreferrer"
+              title="Source on GitHub"
+            >
+              <GitHubLogoIcon width="20" height="20" />
+            </a>
+          </IconButton>
+          {appearance && (
           <SegmentedControl.Root
             size="1"
             value={appearance.preference}
@@ -458,7 +479,8 @@ function Header({ appearance }) {
             <SegmentedControl.Item value="light">Light</SegmentedControl.Item>
             <SegmentedControl.Item value="dark">Dark</SegmentedControl.Item>
           </SegmentedControl.Root>
-        )}
+          )}
+        </Flex>
       </Flex>
       <Text size="3" color="gray" style={{ maxWidth: '58ch' }}>
         Clean up a messy list of names, and find which embedding model suits your

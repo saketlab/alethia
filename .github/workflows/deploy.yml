@@ -75,8 +75,8 @@ jobs:
           needs: website
       - run: Rscript -e 'pkgdown::build_site(".", preview = FALSE, install = FALSE)'
         working-directory: R
-      # pkgdown renders every root .md; this one is agent instructions.
-      - run: rm -f R/docs/CLAUDE.html
+      # pkgdown renders every root .md; these are not site content.
+      - run: rm -f R/docs/CLAUDE.html R/docs/diff.html
       - if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         uses: burnett01/rsync-deployments@7.0.1
         with:

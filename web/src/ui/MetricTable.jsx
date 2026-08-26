@@ -80,10 +80,8 @@ export default function MetricTable({ metrics, best }) {
             return (
               <Table.Row key={key}>
                 <Table.RowHeaderCell>
-                  {/* These explanations used to live in a hover tooltip on a plain span:
-                      unreachable by keyboard, invisible on touch, and hidden from exactly
-                      the reader who most needs them. They are the content of this table,
-                      not an aside, so they are on the page. */}
+                  {/* On the page, not in a tooltip: a tooltip is unreachable by keyboard and
+                      invisible on touch. */}
                   <Flex direction="column" gap="1" style={{ maxWidth: '48ch' }}>
                     <Flex align="center" gap="2" wrap="wrap">
                       <Text weight="medium">{meta.label}</Text>

@@ -43,28 +43,12 @@ plugins:
   - search
   - mkdocs-jupyter:
       execute: false
-  - mkdocstrings:
-      handlers:
-        python:
-          paths: ["python"]
-          options:
-            docstring_style: google
-            docstring_section_style: table
-            show_root_heading: true
-            show_root_full_path: false
-            show_source: true
-            show_signature_annotations: true
-            separate_signature: true
-            members_order: source
-            filters: ["!^_"]
-            heading_level: 3
 
 extra:
   home_title: alethia - label-free entity matching and embedding-model assessment
   # notebooks cannot carry front matter, so their descriptions live here
   descriptions:
-    notebooks/01_india_district_harmonization/: Harmonizing Indian district names across census decades that were never spelled consistently.
-    notebooks/02_medication_name_standardization/: Matching free-text drug mentions in prescriptions and discharge summaries to a generic-name reference list.
+    "": Matching, label-free model choice, and clustering, on small examples.
   social:
     - icon: fontawesome/regular/building
       link: https://github.com/saketlab
@@ -82,19 +66,4 @@ markdown_extensions:
       alternate_style: true
 
 nav:
-  - Home: index.md
-  - Installation: installation.md
-  - Usage: usage.md
-  - Assessment metrics: assessment-metrics.md
-  - Reference:
-      - Overview: reference/index.md
-      - Matching: reference/matching.md
-      - Model assessment: reference/assessment.md
-      - Clustering: reference/clustering.md
-      - Embeddings & visualization: reference/embeddings-visualization.md
-  - Examples:
-      - Overview: notebooks/index.md
-      - Indian district harmonization: notebooks/01_india_district_harmonization.ipynb
-      - Medication name standardization: notebooks/02_medication_name_standardization.ipynb
-  - Contributing: contributing.md
-  - History: history.md
+  - Quickstart: index.ipynb

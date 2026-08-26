@@ -8,7 +8,7 @@ matching, and label-free embedding-model assessment.
 
 ```r
 # install.packages("remotes")
-remotes::install_github("saketlab/alethiaR")
+remotes::install_github("saketlab/alethia", subdir = "R")
 ```
 
 ## Use
