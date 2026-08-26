@@ -87,7 +87,7 @@ alethia = "alethia.cli:app"
 packages = ["alethia", "alethia.assess", "alethia.data"]
 
 [tool.setuptools.package-data]
-"alethia.data" = ["*.csv", "*.json", "*.yml", "*.yaml", "*.md"]
+"alethia.data" = ["*.csv", "*.json", "*.yml", "*.yaml"]
 
 [tool.ruff]
 target-version = "py310"
