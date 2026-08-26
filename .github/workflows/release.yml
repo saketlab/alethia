@@ -1,0 +1,70 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build
+        run: |
+          pip install build twine
+          python -m build python/ --outdir dist
+          twine check --strict dist/*
+
+      # The tag must match the version in the artifacts, or the upload is a mislabelled
+      # release that cannot be undone on PyPI.
+      - name: Check tag matches version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          built=$(ls dist/*.tar.gz | sed -E 's/.*alethia-(.*)\.tar\.gz/\1/')
+          test "$tag" = "$built" || { echo "tag $tag != version $built"; exit 1; }
+
+      # Install from the built wheel, not the source tree, so a missing package-data
+      # entry or a broken entry point fails here rather than on PyPI.
+      - name: Smoke-test the wheel
+        run: |
+          python -m venv /tmp/smoke
+          /tmp/smoke/bin/pip install dist/*.whl
+          /tmp/smoke/bin/alethia --version
+          /tmp/smoke/bin/alethia check || true
+          /tmp/smoke/bin/python -c "
+          from alethia import alethia, cluster_entities, load_mteb_dashboard_data
+          from alethia.assess import assess_models
+          assert len(load_mteb_dashboard_data()) > 0
+          df = alethia(['New Yrok'], ['New York'])
+          assert df.alethia_prediction[0] == 'New York'
+          print('wheel ok')
+          "
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write  # PyPI trusted publishing; no API token stored in the repo
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
