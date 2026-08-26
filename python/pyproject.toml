@@ -1,0 +1,158 @@
+[build-system]
+requires = ["setuptools>=77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "alethia"
+version = "0.1.0"
+description = "Match and deduplicate messy entity names against a reference list."
+readme = "README.md"
+authors = [
+  {name = "Saket Choudhary", email = "saketc@iitb.ac.in"}
+]
+maintainers = [
+  {name = "Saket Choudhary", email = "saketc@iitb.ac.in"}
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Text Processing :: Linguistic",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+
+dependencies = [
+    "numpy>=1.21.0",
+    "pandas>=1.3.0",
+    "tqdm>=4.60.0",
+    "psutil>=5.8.0",
+    "typer>=0.9.0",
+    "rich>=13.0.0",
+    "rapidfuzz>=3.0.0",
+]
+
+[project.optional-dependencies]
+# Local embeddings on ONNX Runtime; no torch in the tree.
+onnx = ["fastembed>=0.6.1"]
+# Any HuggingFace sentence model, via torch.
+gpu = ["sentence-transformers>=3.0.0", "torch>=2.0.0"]
+# Hosted embeddings; no local model.
+cloud = ["openai>=1.0.0", "google-generativeai>=0.3.0"]
+# get_embeddings, do_pca, do_umap, plot_embedding.
+plot = [
+    "matplotlib>=3.5.0",
+    "seaborn>=0.11.0",
+    "scikit-learn>=1.0.0",
+    "umap-learn>=0.5.0",
+]
+
+recommended = ["alethia[onnx,cloud]"]
+full = ["alethia[onnx,gpu,cloud,plot]"]
+
+docs = [
+    "mkdocs>=1.6.1",
+    "mkdocs-jupyter>=0.26.3",
+    "mkdocs-material>=9.7.7",
+    "mkdocstrings[python]>=0.27",
+    "ruff>=0.6",  # mkdocstrings formats separated signatures with black or ruff
+]
+
+# What CI runs: the suite gates on the availability flags and downloads no models,
+# so the base install plus a runner is the honest matrix.
+test-min = ["pytest>=7.0.0", "pytest-cov>=4.0.0", "ruff>=0.6"]
+test = ["alethia[test-min,onnx,gpu,cloud]"]
+dev = ["alethia[test,docs]", "build>=0.10.0", "twine>=4.0.0"]
+
+[project.urls]
+homepage = "https://github.com/saketlab/alethia"
+repository = "https://github.com/saketlab/alethia"
+documentation = "https://saketlab.github.io/alethia/"
+bugs = "https://github.com/saketlab/alethia/issues"
+changelog = "https://saketlab.github.io/alethia/history/"
+
+[project.scripts]
+alethia = "alethia.cli:app"
+
+[tool.setuptools]
+packages = ["alethia", "alethia.assess", "alethia.data"]
+
+[tool.setuptools.package-data]
+"alethia.data" = ["*.csv", "*.json", "*.yml", "*.yaml", "*.md"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 88
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "UP", # pyupgrade
+    "N",  # pep8-naming
+    "YTT", # flake8-2020
+]
+ignore = [
+    "E501",  # line length is the formatter's business
+    "B008",  # do not perform function calls in argument defaults
+    "C901",  # too complex
+    "N803",  # argument name should be lowercase (for API compatibility)
+    "N806",  # variable in function should be lowercase (for API compatibility)
+    "B905",  # zip() without strict=; the paired sequences are equal-length by
+             # construction, and flipping these to strict= is a behaviour change
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]  # Allow unused imports in __init__.py
+"**/test_*.py" = ["N802", "N803"]  # Allow uppercase in test functions
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q --strict-markers --strict-config"
+testpaths = ["tests"]
+filterwarnings = [
+    "ignore::UserWarning",
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+    "ignore:.*google.generativeai.*:UserWarning",
+    "ignore:.*openai.*:UserWarning",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "api: marks tests that require API keys",
+    "gpu: marks tests that require GPU",
+    "integration: marks integration tests",
+]
+
+[tool.coverage.run]
+source = ["alethia"]
+omit = ["*/tests/*", "*/test_*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+    "except ImportError:",
+    "if not.*_AVAILABLE:",
+]

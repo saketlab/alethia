@@ -68,9 +68,6 @@ instance/
 # Scrapy stuff:
 .scrapy
 
-# Sphinx documentation
-docs/_build/
-
 # PyBuilder
 .pybuilder/
 target/
@@ -170,5 +167,27 @@ cython_debug/
 # Ruff stuff:
 .ruff_cache/
 
+datasets/.dataset_cache/
+
 # PyPI configuration file
 .pypirc
+.DS_Store
+
+# web/
+node_modules/
+.vite/
+*.tsbuildinfo
+
+# R
+.Rproj.user/
+.Rhistory
+.RData
+*.Rcheck/
+
+# pkgdown
+R/docs/
+
+# agent scratch dirs
+.agents/
+.codex/
+.claude/

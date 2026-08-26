@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block site_meta %}
+  {% if page and page.meta is mapping and not page.meta.description %}
+    {% set _ = page.meta.update({"description": config.extra.descriptions.get(page.url, "")}) %}
+  {% endif %}
+  {{ super() }}
+{% endblock %}
+
+{% block htmltitle %}
+  {% if page and page.is_homepage %}
+    <title>{{ config.extra.home_title }}</title>
+  {% else %}
+    {{ super() }}
+  {% endif %}
+{% endblock %}
+
+{% block extrahead %}
+  {% set title = page.title ~ " - " ~ config.site_name if page and page.title and not page.is_homepage else config.extra.home_title %}
+  {% set description = page.meta.description if page and page.meta and page.meta.description else config.site_description %}
+
+  <meta name="author" content="Saket Choudhary">
+  <meta name="keywords" content="alethia, Python, entity matching, fuzzy matching, embeddings, sentence transformers, label-free model assessment, entity clustering, deduplication, record linkage">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="{{ config.site_name }}">
+  <meta property="og:title" content="{{ title }}">
+  <meta property="og:description" content="{{ description }}">
+  <meta property="og:url" content="{{ page.canonical_url if page else config.site_url }}">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="{{ title }}">
+  <meta name="twitter:description" content="{{ description }}">
+
+  {% if page and page.is_homepage %}
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "alethia",
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "Linux, macOS, Windows",
+      "description": {{ config.site_description | tojson }},
+      "url": {{ config.site_url | tojson }},
+      "codeRepository": {{ config.repo_url | trim | tojson }},
+      "programmingLanguage": "Python",
+      "license": "https://opensource.org/licenses/MIT",
+      "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"}
+    }
+  </script>
+  {% endif %}
+{% endblock %}
