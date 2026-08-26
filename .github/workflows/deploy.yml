@@ -1,13 +1,5 @@
 name: Deploy
 
-# One workflow assembles the whole site and rsyncs it once. Three workflows each
-# syncing their own subtree would need --delete scoped per directory to avoid
-# deleting each other's output.
-#
-#   /             the browser app  (web/,  vite)
-#   /cli/python   the Python docs  (docs/, mkdocs)
-#   /cli/R        the R reference  (R/,    pkgdown)
-
 on:
   push:
     branches: [main]
@@ -20,25 +12,23 @@ concurrency:
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
-  web:
+  detect:
     runs-on: ubuntu-latest
+    outputs:
+      web: ${{ steps.dirs.outputs.web }}
+      r: ${{ steps.dirs.outputs.r }}
+      docs: ${{ steps.dirs.outputs.docs }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: npm
-          cache-dependency-path: web/package-lock.json
-      - run: npm ci
-        working-directory: web
-      - run: npm run check
-        working-directory: web
-      - run: npx vite build
-        working-directory: web
-      - uses: actions/upload-artifact@v4
-        with: {name: site-web, path: web/dist/, retention-days: 7}
+      - id: dirs
+        run: |
+          echo "web=$([ -f web/package.json ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "r=$([ -f R/DESCRIPTION ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "docs=$([ -f mkdocs.yml ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
   python-docs:
+    needs: detect
+    if: needs.detect.outputs.docs == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -51,10 +41,20 @@ jobs:
       # Notebooks render from committed outputs (mkdocs-jupyter execute=false),
       # so no embedding backend is installed here.
       - run: scripts/build_docs.sh --strict
-      - uses: actions/upload-artifact@v4
-        with: {name: site-python, path: site/, retention-days: 7}
+      - if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        uses: burnett01/rsync-deployments@7.0.1
+        with:
+          switches: -avzr --delete
+          path: site/
+          remote_path: ${{ secrets.HOSTINGER_REMOTE_PATH }}/cli/python
+          remote_host: ${{ secrets.HOSTINGER_HOST }}
+          remote_port: ${{ secrets.HOSTINGER_PORT }}
+          remote_user: ${{ secrets.HOSTINGER_USER }}
+          remote_key: ${{ secrets.HOSTINGER_SSH_KEY }}
 
   r-docs:
+    needs: detect
+    if: needs.detect.outputs.r == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -70,39 +70,41 @@ jobs:
         working-directory: R
       # pkgdown renders every root .md; this one is agent instructions.
       - run: rm -f R/docs/CLAUDE.html
-      - uses: actions/upload-artifact@v4
-        with: {name: site-r, path: R/docs/, retention-days: 7}
-
-  publish:
-    needs: [web, python-docs, r-docs]
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with: {name: site-web, path: site}
-      - uses: actions/download-artifact@v4
-        with: {name: site-python, path: site/cli/python}
-      - uses: actions/download-artifact@v4
-        with: {name: site-r, path: site/cli/R}
-
-      # ONNX Runtime uses multi-threaded wasm only in a cross-origin isolated
-      # context, so the app runs single-threaded without these headers.
-      - name: Add headers and verify the tree
-        run: |
-          cp web/deploy/.htaccess site/.htaccess
-          test -f site/index.html
-          test -f site/cli/python/index.html
-          test -f site/cli/R/index.html
-
-      - name: Deploy to Hostinger
-        if: env.HOSTINGER_REMOTE_PATH != ''
-        env:
-          HOSTINGER_REMOTE_PATH: ${{ secrets.HOSTINGER_REMOTE_PATH }}
+      - if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         uses: burnett01/rsync-deployments@7.0.1
         with:
           switches: -avzr --delete
-          path: site/
+          path: R/docs/
+          remote_path: ${{ secrets.HOSTINGER_REMOTE_PATH }}/cli/R
+          remote_host: ${{ secrets.HOSTINGER_HOST }}
+          remote_port: ${{ secrets.HOSTINGER_PORT }}
+          remote_user: ${{ secrets.HOSTINGER_USER }}
+          remote_key: ${{ secrets.HOSTINGER_SSH_KEY }}
+
+  web:
+    needs: detect
+    if: needs.detect.outputs.web == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+        working-directory: web
+      - run: npm run check
+        working-directory: web
+      - run: npx vite build
+        working-directory: web
+      # ONNX Runtime uses multi-threaded wasm only in a cross-origin isolated context.
+      - run: cp web/deploy/.htaccess web/dist/.htaccess
+      - if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        uses: burnett01/rsync-deployments@7.0.1
+        with:
+          switches: -avzr --delete --exclude=cli/
+          path: web/dist/
           remote_path: ${{ secrets.HOSTINGER_REMOTE_PATH }}
           remote_host: ${{ secrets.HOSTINGER_HOST }}
           remote_port: ${{ secrets.HOSTINGER_PORT }}
