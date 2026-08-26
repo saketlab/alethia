@@ -1,0 +1,98 @@
+/* Type and rhythm follow the Radix scale; only what the tokens cannot express is set
+   here. Kept deliberately small so the design system stays the single source of truth. */
+
+body {
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Every figure in this app exists to be compared against another figure: scores down a
+   column, metrics across models. Proportional digits make those columns ragged and the
+   comparison harder than it needs to be, so anything numeric opts into tabular figures. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* Selection ships with a browser default that belongs to no design system. Taking it
+   from the palette is the difference between a page that was assembled and one that was
+   built, and people select text constantly in an app whose input is a pasted list. */
+::selection {
+  background-color: var(--accent-a5);
+}
+
+/* Visually hidden but still reachable: not display:none, which also removes an element
+   from the tab order. That is exactly how "Load a file" became mouse-only. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* The file input keeps focus while staying invisible, so the visible label has to be the
+   thing that shows the focus ring. */
+.file-trigger:focus-within {
+  outline: 2px solid var(--focus-8);
+  outline-offset: 2px;
+}
+
+/* Off-screen until focused, then the first stop in the tab order. Without it, reaching
+   the controls means tabbing through two textareas on every single visit. */
+.skip-link {
+  position: absolute;
+  top: var(--space-3);
+  left: var(--space-3);
+  z-index: 100;
+  transform: translateY(-250%);
+  transition: transform 140ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+}
+
+/* Both of these take focus programmatically, the skip link's target, and the view
+   container when a button navigates between views. A ring around a whole region the user
+   never tabbed to reads as a rendering fault rather than as focus. */
+.view-panel:focus,
+#main-content:focus {
+  outline: none;
+}
+
+/* The one piece of authored motion in the app: a progress indicator that would otherwise
+   look frozen through a long encode. */
+.spin {
+  animation: spin 1.1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Stop the movement, keep the meaning. The spinner is pure rotation carrying nothing
+     the stage label and percentage do not already say, so it stops outright.
+     What used to be here was a blanket `animation-duration: 0.01ms !important` across
+     every element, which also flattened the progress bar's fill and every state
+     transition in the app, so a user who asked for less motion lost the feedback that
+     tells them a five-minute run is still alive. Reduced motion is less movement, not
+     less information. */
+  .spin { animation: none; }
+  .skip-link { transition: none; }
+}
+
+/* A ghost button sitting inside grey body text renders as plain text, so an inline
+   action needs the underline to read as one. Solid buttons keep their own styling. */
+.inline-action {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  color: var(--accent-11);
+}

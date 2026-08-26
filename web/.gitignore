@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.ssr-check/
+.itest/
+.itest-onboard/
+
+# Machine-local. The skills entry is a symlink into this developer's home
+# directory, so committing it would resolve to nothing on any other machine.
+.claude/skills/
+.claude/settings.local.json
+.impeccable/config.local.json
+.impeccable/cache/

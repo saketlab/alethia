@@ -1,4 +1,4 @@
-site_name: alethia
+site_name: alethia for Python
 site_url: https://alethia.saketlab.org/cli/python/
 site_description: >-
   Entity matching, standardization, and label-free embedding-model assessment,
@@ -65,8 +65,6 @@ extra:
   descriptions:
     notebooks/01_india_district_harmonization/: Harmonizing Indian district names across census decades that were never spelled consistently.
     notebooks/02_medication_name_standardization/: Matching free-text drug mentions in prescriptions and discharge summaries to a generic-name reference list.
-    notebooks/03_validating_the_assessor/: Checking that the label-free assessor's ranking agrees with true accuracy on data where the answer is known.
-    notebooks/04_clustering_entities/: Grouping messy entity strings into audited clusters with alethia.cluster, without a reference list at all.
   social:
     - icon: fontawesome/regular/building
       link: https://github.com/saketlab
@@ -87,9 +85,7 @@ nav:
   - Home: index.md
   - Installation: installation.md
   - Usage: usage.md
-  - Methodology:
-      - Assessment metrics: assessment-metrics.md
-      - Clustering: clustering-methodology.md
+  - Assessment metrics: assessment-metrics.md
   - Reference:
       - Overview: reference/index.md
       - Matching: reference/matching.md
@@ -100,8 +96,5 @@ nav:
       - Overview: notebooks/index.md
       - Indian district harmonization: notebooks/01_india_district_harmonization.ipynb
       - Medication name standardization: notebooks/02_medication_name_standardization.ipynb
-      - Validating the assessor: notebooks/03_validating_the_assessor.ipynb
-      - Clustering entities: notebooks/04_clustering_entities.ipynb
   - Contributing: contributing.md
-  - Deploying: deploying.md
   - History: history.md

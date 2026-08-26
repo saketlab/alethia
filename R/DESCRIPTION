@@ -1,0 +1,27 @@
+Package: alethiaR
+Title: Match and Deduplicate Messy Entity Names Against a Reference List
+Version: 0.1.0
+Authors@R:
+    person("Saket", "Choudhary",
+           email = "saketc@iitb.ac.in",
+           role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0001-5202-7633"))
+Description: Aligns messy entity strings against a reference list using either
+    string similarity or language-model embeddings.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Depends: R (>= 4.1.0)
+Imports:
+    stats,
+    stringdist (>= 0.9.10)
+Suggests:
+    testthat (>= 3.0.0),
+    jsonlite,
+    igraph,
+    onnxr,
+    tok,
+    hfhub
+Config/testthat/edition: 3
+RoxygenNote: 8.0.0
+URL: https://alethia.saketlab.org/cli/R, https://github.com/saketlab/alethia
+BugReports: https://github.com/saketlab/alethia/issues

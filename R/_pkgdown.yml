@@ -1,0 +1,26 @@
+url: https://alethia.saketlab.org/cli/R
+
+template:
+  bootstrap: 5
+
+home:
+  title: alethia for R
+  description: >
+    Match and deduplicate messy entity names against a reference list, in native R,
+    and choose the embedding model without labels.
+
+navbar:
+  structure:
+    left: [reference, articles]
+    right: [python, web, github]
+  components:
+    python:
+      text: Python
+      href: https://alethia.saketlab.org/cli/python/
+    web:
+      text: Web app
+      href: https://alethia.saketlab.org/
+    github:
+      icon: fab fa-github
+      aria-label: GitHub repository
+      href: https://github.com/saketlab/alethia

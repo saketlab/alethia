@@ -1,0 +1,843 @@
+{
+ "description": "1951 census district spellings matched to 2001 names, token-sort string similarity",
+ "queries": [
+  "Andaman and Nicobar",
+  "Andaman and Nicobar",
+  "Andaman and Nicobar",
+  "Srikakulam",
+  "Srikakulam",
+  "Vizagapatnam",
+  "Vizagapatnam",
+  "East Godavari",
+  "West Godavari",
+  "Krishna",
+  "Guntur",
+  "Guntur",
+  "Nellore",
+  "Nellore",
+  "Chittoor",
+  "Cuddapah",
+  "Anantapur",
+  "Kurnool",
+  "Kurnool",
+  "Mahbubnagar",
+  "Hyderabad",
+  "Hyderabad",
+  "Medak",
+  "Nizamabad",
+  "Adilabad",
+  "Karimnagar",
+  "Warangal",
+  "Warangal",
+  "Nalgonda",
+  "Balipara Frontier Tract",
+  "Balipara Frontier Tract",
+  "Balipara Frontier Tract",
+  "Balipara Frontier Tract",
+  "Balipara Frontier Tract",
+  "Balipara Frontier Tract",
+  "Abor Hills",
+  "Abor Hills",
+  "Abor Hills",
+  "Abor Hills",
+  "Mishmi Hills",
+  "Mishmi Hills",
+  "Tirap Frontier Tract",
+  "Tirap Frontier Tract",
+  "Goalpara",
+  "Goalpara",
+  "Goalpara",
+  "Goalpara",
+  "Kamrup",
+  "Kamrup",
+  "Kamrup",
+  "Darrang",
+  "Darrang",
+  "Lakhimpur",
+  "Lakhimpur",
+  "Lakhimpur",
+  "Lakhimpur",
+  "Nowgong",
+  "Nowgong",
+  "Sibsagar",
+  "Sibsagar",
+  "Sibsagar",
+  "Cachar",
+  "Cachar",
+  "Cachar",
+  "United Mikir and North Cachar Hills",
+  "United Mikir and North Cachar Hills",
+  "Garo Hills",
+  "Garo Hills",
+  "Garo Hills",
+  "United Khasi and Jaintia Hills",
+  "United Khasi and Jaintia Hills",
+  "United Khasi and Jaintia Hills",
+  "United Khasi and Jaintia Hills",
+  "Lushai Hills",
+  "Lushai Hills",
+  "Lushai Hills",
+  "Lushai Hills",
+  "Lushai Hills",
+  "Lushai Hills",
+  "Lushai Hills",
+  "Lushai Hills",
+  "Patna",
+  "Patna",
+  "Gaya",
+  "Gaya",
+  "Gaya",
+  "Gaya",
+  "Shahabad",
+  "Shahabad",
+  "Shahabad",
+  "Shahabad",
+  "Saran",
+  "Saran",
+  "Saran",
+  "Champaran",
+  "Champaran",
+  "Muzaffarpur",
+  "Muzaffarpur",
+  "Muzaffarpur",
+  "Muzaffarpur",
+  "Darbhanga",
+  "Darbhanga",
+  "Darbhanga",
+  "Monghyr",
+  "Monghyr",
+  "Monghyr",
+  "Monghyr",
+  "Monghyr",
+  "Monghyr",
+  "Bhagalpur",
+  "Bhagalpur",
+  "Saharsa",
+  "Saharsa",
+  "Saharsa",
+  "Purnea",
+  "Purnea",
+  "Purnea",
+  "Purnea",
+  "Santal Parganas",
+  "Santal Parganas"
+ ],
+ "references": [
+  "Adilabad",
+  "Aizawl",
+  "Anantapur",
+  "Andaman",
+  "Andaman and Nicobar Islands",
+  "Araria",
+  "Aurangabad",
+  "Banka",
+  "Barpeta",
+  "Begusarai",
+  "Bhagalpur",
+  "Bhojpur",
+  "Bongaigaon",
+  "Buxar",
+  "Cachar",
+  "Champhai",
+  "Changlang",
+  "Chittoor",
+  "Cuddapah",
+  "Darbhanga",
+  "Darrang",
+  "Dhemaji",
+  "Dhuburi",
+  "Dibang Valley",
+  "Dibrugarh",
+  "Dumka",
+  "East Garo Hills",
+  "East Godavari",
+  "East Kameng",
+  "East Khasi Hills",
+  "East Siang",
+  "Gaya",
+  "Goalpara",
+  "Golaghat",
+  "Gopalganj",
+  "Guntur",
+  "Hailakandi",
+  "Hyderabad",
+  "Jaintia Hills",
+  "Jamui",
+  "Jehanabad",
+  "Jorhat",
+  "Kaimur (Bhabua)",
+  "Kamrup",
+  "Karbi Anglong",
+  "Karimganj",
+  "Karimnagar",
+  "Katihar",
+  "Khagaria",
+  "Khammam",
+  "Kishanganj",
+  "Kokrajhar",
+  "Kolasib",
+  "Krishna",
+  "Kurnool",
+  "Lakhimpur",
+  "Lakhisaral",
+  "Lawngtlai",
+  "Lohit",
+  "Lower Subansiri",
+  "Lunglei",
+  "Madhepura",
+  "Madhudani",
+  "Mahbubnagar",
+  "Mamit",
+  "Marigaon",
+  "Medak",
+  "Munger",
+  "Muzaffarpur",
+  "Nagaon",
+  "Nalanda",
+  "Nalbari",
+  "Nalgonda",
+  "Nawada",
+  "Nellore",
+  "Nicobar",
+  "Nizamabad",
+  "North Cachar Hills",
+  "Ongole",
+  "Papum Pare",
+  "Pashchim Champaran",
+  "Patna",
+  "Purba Champaran",
+  "Purnea",
+  "Rangareddi",
+  "Ri Bhoi",
+  "Rohtas",
+  "Saharsa",
+  "Saiha",
+  "Samastipur",
+  "Saran",
+  "Serchhip",
+  "Sheilkhpura",
+  "Sheohar",
+  "Sibsagar",
+  "Sitamarhi",
+  "Siwan",
+  "Sonitpur",
+  "South Garo Hills",
+  "Srikakulam",
+  "Supaul",
+  "Tawang",
+  "Tinsukia",
+  "Tirap",
+  "Upper Siang",
+  "Upper Subansiri",
+  "Visakhapatnam",
+  "Vizianagaram",
+  "Warangal",
+  "West Garo Hills",
+  "West Godavari",
+  "West Kameng",
+  "West Khasi Hills",
+  "West Siang"
+ ],
+ "expected": [
+  {
+   "given_entity": "Andaman and Nicobar",
+   "alethia_prediction": "Andaman and Nicobar Islands",
+   "alethia_score": 0.826086956521739
+  },
+  {
+   "given_entity": "Andaman and Nicobar",
+   "alethia_prediction": "Andaman and Nicobar Islands",
+   "alethia_score": 0.826086956521739
+  },
+  {
+   "given_entity": "Andaman and Nicobar",
+   "alethia_prediction": "Andaman and Nicobar Islands",
+   "alethia_score": 0.826086956521739
+  },
+  {
+   "given_entity": "Srikakulam",
+   "alethia_prediction": "Srikakulam",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Srikakulam",
+   "alethia_prediction": "Srikakulam",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Vizagapatnam",
+   "alethia_prediction": "Visakhapatnam",
+   "alethia_score": 0.8
+  },
+  {
+   "given_entity": "Vizagapatnam",
+   "alethia_prediction": "Visakhapatnam",
+   "alethia_score": 0.8
+  },
+  {
+   "given_entity": "East Godavari",
+   "alethia_prediction": "East Godavari",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "West Godavari",
+   "alethia_prediction": "West Godavari",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Krishna",
+   "alethia_prediction": "Krishna",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Guntur",
+   "alethia_prediction": "Guntur",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Guntur",
+   "alethia_prediction": "Guntur",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Nellore",
+   "alethia_prediction": "Nellore",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Nellore",
+   "alethia_prediction": "Nellore",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Chittoor",
+   "alethia_prediction": "Chittoor",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Cuddapah",
+   "alethia_prediction": "Cuddapah",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Anantapur",
+   "alethia_prediction": "Anantapur",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Kurnool",
+   "alethia_prediction": "Kurnool",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Kurnool",
+   "alethia_prediction": "Kurnool",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Mahbubnagar",
+   "alethia_prediction": "Mahbubnagar",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Hyderabad",
+   "alethia_prediction": "Hyderabad",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Hyderabad",
+   "alethia_prediction": "Hyderabad",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Medak",
+   "alethia_prediction": "Medak",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Nizamabad",
+   "alethia_prediction": "Nizamabad",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Adilabad",
+   "alethia_prediction": "Adilabad",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Karimnagar",
+   "alethia_prediction": "Karimnagar",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Warangal",
+   "alethia_prediction": "Warangal",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Warangal",
+   "alethia_prediction": "Warangal",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Nalgonda",
+   "alethia_prediction": "Nalgonda",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Balipara Frontier Tract",
+   "alethia_prediction": "Purba Champaran",
+   "alethia_score": 0.4736842105263158
+  },
+  {
+   "given_entity": "Balipara Frontier Tract",
+   "alethia_prediction": "Purba Champaran",
+   "alethia_score": 0.4736842105263158
+  },
+  {
+   "given_entity": "Balipara Frontier Tract",
+   "alethia_prediction": "Purba Champaran",
+   "alethia_score": 0.4736842105263158
+  },
+  {
+   "given_entity": "Balipara Frontier Tract",
+   "alethia_prediction": "Purba Champaran",
+   "alethia_score": 0.4736842105263158
+  },
+  {
+   "given_entity": "Balipara Frontier Tract",
+   "alethia_prediction": "Purba Champaran",
+   "alethia_score": 0.4736842105263158
+  },
+  {
+   "given_entity": "Balipara Frontier Tract",
+   "alethia_prediction": "Purba Champaran",
+   "alethia_score": 0.4736842105263158
+  },
+  {
+   "given_entity": "Abor Hills",
+   "alethia_prediction": "East Garo Hills",
+   "alethia_score": 0.56
+  },
+  {
+   "given_entity": "Abor Hills",
+   "alethia_prediction": "East Garo Hills",
+   "alethia_score": 0.56
+  },
+  {
+   "given_entity": "Abor Hills",
+   "alethia_prediction": "East Garo Hills",
+   "alethia_score": 0.56
+  },
+  {
+   "given_entity": "Abor Hills",
+   "alethia_prediction": "East Garo Hills",
+   "alethia_score": 0.56
+  },
+  {
+   "given_entity": "Mishmi Hills",
+   "alethia_prediction": "Jaintia Hills",
+   "alethia_score": 0.64
+  },
+  {
+   "given_entity": "Mishmi Hills",
+   "alethia_prediction": "Jaintia Hills",
+   "alethia_score": 0.64
+  },
+  {
+   "given_entity": "Tirap Frontier Tract",
+   "alethia_prediction": "Tirap",
+   "alethia_score": 0.4
+  },
+  {
+   "given_entity": "Tirap Frontier Tract",
+   "alethia_prediction": "Tirap",
+   "alethia_score": 0.4
+  },
+  {
+   "given_entity": "Goalpara",
+   "alethia_prediction": "Goalpara",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Goalpara",
+   "alethia_prediction": "Goalpara",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Goalpara",
+   "alethia_prediction": "Goalpara",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Goalpara",
+   "alethia_prediction": "Goalpara",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Kamrup",
+   "alethia_prediction": "Kamrup",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Kamrup",
+   "alethia_prediction": "Kamrup",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Kamrup",
+   "alethia_prediction": "Kamrup",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Darrang",
+   "alethia_prediction": "Darrang",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Darrang",
+   "alethia_prediction": "Darrang",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Lakhimpur",
+   "alethia_prediction": "Lakhimpur",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Lakhimpur",
+   "alethia_prediction": "Lakhimpur",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Lakhimpur",
+   "alethia_prediction": "Lakhimpur",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Lakhimpur",
+   "alethia_prediction": "Lakhimpur",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Nowgong",
+   "alethia_prediction": "Nagaon",
+   "alethia_score": 0.6153846153846154
+  },
+  {
+   "given_entity": "Nowgong",
+   "alethia_prediction": "Nagaon",
+   "alethia_score": 0.6153846153846154
+  },
+  {
+   "given_entity": "Sibsagar",
+   "alethia_prediction": "Sibsagar",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Sibsagar",
+   "alethia_prediction": "Sibsagar",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Sibsagar",
+   "alethia_prediction": "Sibsagar",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Cachar",
+   "alethia_prediction": "Cachar",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Cachar",
+   "alethia_prediction": "Cachar",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Cachar",
+   "alethia_prediction": "Cachar",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "United Mikir and North Cachar Hills",
+   "alethia_prediction": "North Cachar Hills",
+   "alethia_score": 0.679245283018868
+  },
+  {
+   "given_entity": "United Mikir and North Cachar Hills",
+   "alethia_prediction": "North Cachar Hills",
+   "alethia_score": 0.679245283018868
+  },
+  {
+   "given_entity": "Garo Hills",
+   "alethia_prediction": "East Garo Hills",
+   "alethia_score": 0.8
+  },
+  {
+   "given_entity": "Garo Hills",
+   "alethia_prediction": "East Garo Hills",
+   "alethia_score": 0.8
+  },
+  {
+   "given_entity": "Garo Hills",
+   "alethia_prediction": "East Garo Hills",
+   "alethia_score": 0.8
+  },
+  {
+   "given_entity": "United Khasi and Jaintia Hills",
+   "alethia_prediction": "Jaintia Hills",
+   "alethia_score": 0.6046511627906976
+  },
+  {
+   "given_entity": "United Khasi and Jaintia Hills",
+   "alethia_prediction": "Jaintia Hills",
+   "alethia_score": 0.6046511627906976
+  },
+  {
+   "given_entity": "United Khasi and Jaintia Hills",
+   "alethia_prediction": "Jaintia Hills",
+   "alethia_score": 0.6046511627906976
+  },
+  {
+   "given_entity": "United Khasi and Jaintia Hills",
+   "alethia_prediction": "Jaintia Hills",
+   "alethia_score": 0.6046511627906976
+  },
+  {
+   "given_entity": "Lushai Hills",
+   "alethia_prediction": "East Khasi Hills",
+   "alethia_score": 0.6428571428571428
+  },
+  {
+   "given_entity": "Lushai Hills",
+   "alethia_prediction": "East Khasi Hills",
+   "alethia_score": 0.6428571428571428
+  },
+  {
+   "given_entity": "Lushai Hills",
+   "alethia_prediction": "East Khasi Hills",
+   "alethia_score": 0.6428571428571428
+  },
+  {
+   "given_entity": "Lushai Hills",
+   "alethia_prediction": "East Khasi Hills",
+   "alethia_score": 0.6428571428571428
+  },
+  {
+   "given_entity": "Lushai Hills",
+   "alethia_prediction": "East Khasi Hills",
+   "alethia_score": 0.6428571428571428
+  },
+  {
+   "given_entity": "Lushai Hills",
+   "alethia_prediction": "East Khasi Hills",
+   "alethia_score": 0.6428571428571428
+  },
+  {
+   "given_entity": "Lushai Hills",
+   "alethia_prediction": "East Khasi Hills",
+   "alethia_score": 0.6428571428571428
+  },
+  {
+   "given_entity": "Lushai Hills",
+   "alethia_prediction": "East Khasi Hills",
+   "alethia_score": 0.6428571428571428
+  },
+  {
+   "given_entity": "Patna",
+   "alethia_prediction": "Patna",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Patna",
+   "alethia_prediction": "Patna",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Gaya",
+   "alethia_prediction": "Gaya",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Gaya",
+   "alethia_prediction": "Gaya",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Gaya",
+   "alethia_prediction": "Gaya",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Gaya",
+   "alethia_prediction": "Gaya",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Shahabad",
+   "alethia_prediction": "Jehanabad",
+   "alethia_score": 0.7058823529411764
+  },
+  {
+   "given_entity": "Shahabad",
+   "alethia_prediction": "Jehanabad",
+   "alethia_score": 0.7058823529411764
+  },
+  {
+   "given_entity": "Shahabad",
+   "alethia_prediction": "Jehanabad",
+   "alethia_score": 0.7058823529411764
+  },
+  {
+   "given_entity": "Shahabad",
+   "alethia_prediction": "Jehanabad",
+   "alethia_score": 0.7058823529411764
+  },
+  {
+   "given_entity": "Saran",
+   "alethia_prediction": "Saran",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Saran",
+   "alethia_prediction": "Saran",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Saran",
+   "alethia_prediction": "Saran",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Champaran",
+   "alethia_prediction": "Purba Champaran",
+   "alethia_score": 0.75
+  },
+  {
+   "given_entity": "Champaran",
+   "alethia_prediction": "Purba Champaran",
+   "alethia_score": 0.75
+  },
+  {
+   "given_entity": "Muzaffarpur",
+   "alethia_prediction": "Muzaffarpur",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Muzaffarpur",
+   "alethia_prediction": "Muzaffarpur",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Muzaffarpur",
+   "alethia_prediction": "Muzaffarpur",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Muzaffarpur",
+   "alethia_prediction": "Muzaffarpur",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Darbhanga",
+   "alethia_prediction": "Darbhanga",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Darbhanga",
+   "alethia_prediction": "Darbhanga",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Darbhanga",
+   "alethia_prediction": "Darbhanga",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Monghyr",
+   "alethia_prediction": "Munger",
+   "alethia_score": 0.6153846153846154
+  },
+  {
+   "given_entity": "Monghyr",
+   "alethia_prediction": "Munger",
+   "alethia_score": 0.6153846153846154
+  },
+  {
+   "given_entity": "Monghyr",
+   "alethia_prediction": "Munger",
+   "alethia_score": 0.6153846153846154
+  },
+  {
+   "given_entity": "Monghyr",
+   "alethia_prediction": "Munger",
+   "alethia_score": 0.6153846153846154
+  },
+  {
+   "given_entity": "Monghyr",
+   "alethia_prediction": "Munger",
+   "alethia_score": 0.6153846153846154
+  },
+  {
+   "given_entity": "Monghyr",
+   "alethia_prediction": "Munger",
+   "alethia_score": 0.6153846153846154
+  },
+  {
+   "given_entity": "Bhagalpur",
+   "alethia_prediction": "Bhagalpur",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Bhagalpur",
+   "alethia_prediction": "Bhagalpur",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Saharsa",
+   "alethia_prediction": "Saharsa",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Saharsa",
+   "alethia_prediction": "Saharsa",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Saharsa",
+   "alethia_prediction": "Saharsa",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Purnea",
+   "alethia_prediction": "Purnea",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Purnea",
+   "alethia_prediction": "Purnea",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Purnea",
+   "alethia_prediction": "Purnea",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Purnea",
+   "alethia_prediction": "Purnea",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Santal Parganas",
+   "alethia_prediction": "Warangal",
+   "alethia_score": 0.5217391304347826
+  },
+  {
+   "given_entity": "Santal Parganas",
+   "alethia_prediction": "Warangal",
+   "alethia_score": 0.5217391304347826
+  }
+ ]
+}

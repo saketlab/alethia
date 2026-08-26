@@ -20,11 +20,17 @@ jobs:
       docs: ${{ steps.dirs.outputs.docs }}
     steps:
       - uses: actions/checkout@v4
+      # Gate on everything a job needs, not one marker file: a partial add would
+      # otherwise start a job that cannot finish.
       - id: dirs
         run: |
-          echo "web=$([ -f web/package.json ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
-          echo "r=$([ -f R/DESCRIPTION ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
-          echo "docs=$([ -f mkdocs.yml ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          have() { for f in "$@"; do [ -e "$f" ] || { echo false; return; }; done; echo true; }
+          {
+            echo "web=$(have web/package.json web/package-lock.json web/src web/index.html)"
+            echo "r=$(have R/DESCRIPTION R/R R/man R/_pkgdown.yml)"
+            echo "docs=$(have mkdocs.yml docs overrides scripts/build_docs.sh python/pyproject.toml)"
+          } >> "$GITHUB_OUTPUT"
+          cat "$GITHUB_OUTPUT"
 
   python-docs:
     needs: detect
@@ -44,7 +50,8 @@ jobs:
       - if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         uses: burnett01/rsync-deployments@7.0.1
         with:
-          switches: -avzr --delete
+          # --mkpath: rsync will not create cli/ on a fresh docroot
+          switches: -avzr --delete --mkpath
           path: site/
           remote_path: ${{ secrets.HOSTINGER_REMOTE_PATH }}/cli/python
           remote_host: ${{ secrets.HOSTINGER_HOST }}
@@ -73,7 +80,7 @@ jobs:
       - if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         uses: burnett01/rsync-deployments@7.0.1
         with:
-          switches: -avzr --delete
+          switches: -avzr --delete --mkpath
           path: R/docs/
           remote_path: ${{ secrets.HOSTINGER_REMOTE_PATH }}/cli/R
           remote_host: ${{ secrets.HOSTINGER_HOST }}

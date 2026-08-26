@@ -1,0 +1,443 @@
+{
+ "description": "misspelled medication names matched by char-bag cosine",
+ "queries": [
+  "Amitrityline",
+  "Amlodippine",
+  "Amoxicillni",
+  "Asprin",
+  "Atennolol",
+  "Atoravstatin",
+  "Azithromycn",
+  "Bisoprolool",
+  "Budeosnide",
+  "Ceftrixone",
+  "Cepphalexin",
+  "Ceitrizine",
+  "Ciproflxacin",
+  "Clinndamycin",
+  "Clopidogrle",
+  "Dexamethaone",
+  "Diaazepam",
+  "Diclofenca",
+  "Doxyycline",
+  "Enalaprril",
+  "Esomperazole",
+  "Floxetine",
+  "Fluticaasone",
+  "Furoesmide",
+  "Gabpentin",
+  "Glibennclamide",
+  "Gliclaizde",
+  "Hepain",
+  "Hyddrochlorothiazide",
+  "Hydrocrotisone",
+  "Ibuproen",
+  "Insuulin",
+  "Levetiraectam",
+  "Levotyroxine",
+  "Lorratadine",
+  "Loarzepam",
+  "Losartn",
+  "Metfoormin",
+  "Meotclopramide",
+  "Metronidazle",
+  "Montelukkast",
+  "Mrophine",
+  "Naprxen",
+  "Omepraazole",
+  "Ondanestron",
+  "Pantprazole",
+  "Paracettamol",
+  "Prednisoolne",
+  "Rmipril",
+  "Raniitidine",
+  "Rviaroxaban",
+  "Rosuvastatn",
+  "Salbutaamol",
+  "Setrraline",
+  "Simvasatin",
+  "Sitaglipttin",
+  "Spironloactone",
+  "Telmisatan",
+  "Theopphylline",
+  "Trmaadol",
+  "Trmethoprim",
+  "Warfaarin"
+ ],
+ "references": [
+  "Amitriptyline",
+  "Amlodipine",
+  "Amoxicillin",
+  "Aspirin",
+  "Atenolol",
+  "Atorvastatin",
+  "Azithromycin",
+  "Bisoprolol",
+  "Budesonide",
+  "Ceftriaxone",
+  "Cephalexin",
+  "Cetirizine",
+  "Ciprofloxacin",
+  "Clindamycin",
+  "Clopidogrel",
+  "Dexamethasone",
+  "Diazepam",
+  "Diclofenac",
+  "Doxycycline",
+  "Enalapril",
+  "Esomeprazole",
+  "Fluoxetine",
+  "Fluticasone",
+  "Furosemide",
+  "Gabapentin",
+  "Glibenclamide",
+  "Gliclazide",
+  "Heparin",
+  "Hydrochlorothiazide",
+  "Hydrocortisone",
+  "Ibuprofen",
+  "Insulin",
+  "Levetiracetam",
+  "Levothyroxine",
+  "Loratadine",
+  "Lorazepam",
+  "Losartan",
+  "Metformin",
+  "Metoclopramide",
+  "Metronidazole",
+  "Montelukast",
+  "Morphine",
+  "Naproxen",
+  "Omeprazole",
+  "Ondansetron",
+  "Pantoprazole",
+  "Paracetamol",
+  "Prednisolone",
+  "Ramipril",
+  "Ranitidine",
+  "Rivaroxaban",
+  "Rosuvastatin",
+  "Salbutamol",
+  "Sertraline",
+  "Simvastatin",
+  "Sitagliptin",
+  "Spironolactone",
+  "Telmisartan",
+  "Theophylline",
+  "Tramadol",
+  "Trimethoprim",
+  "Warfarin"
+ ],
+ "expected": [
+  {
+   "given_entity": "Amitrityline",
+   "alethia_prediction": "Amitriptyline",
+   "alethia_score": 0.9759000729485331
+  },
+  {
+   "given_entity": "Amlodippine",
+   "alethia_prediction": "Amlodipine",
+   "alethia_score": 0.9689627902499088
+  },
+  {
+   "given_entity": "Amoxicillni",
+   "alethia_prediction": "Amoxicillin",
+   "alethia_score": 0.9999999999999996
+  },
+  {
+   "given_entity": "Asprin",
+   "alethia_prediction": "Aspirin",
+   "alethia_score": 0.9525793444156804
+  },
+  {
+   "given_entity": "Atennolol",
+   "alethia_prediction": "Atenolol",
+   "alethia_score": 0.9689627902499088
+  },
+  {
+   "given_entity": "Atoravstatin",
+   "alethia_prediction": "Atorvastatin",
+   "alethia_score": 1.0000000000000002
+  },
+  {
+   "given_entity": "Azithromycn",
+   "alethia_prediction": "Azithromycin",
+   "alethia_score": 0.9669875568304562
+  },
+  {
+   "given_entity": "Bisoprolool",
+   "alethia_prediction": "Bisoprolol",
+   "alethia_score": 0.9899494936611668
+  },
+  {
+   "given_entity": "Budeosnide",
+   "alethia_prediction": "Budesonide",
+   "alethia_score": 0.9999999999999999
+  },
+  {
+   "given_entity": "Ceftrixone",
+   "alethia_prediction": "Ceftriaxone",
+   "alethia_score": 0.960768922830523
+  },
+  {
+   "given_entity": "Cepphalexin",
+   "alethia_prediction": "Cephalexin",
+   "alethia_score": 0.9689627902499088
+  },
+  {
+   "given_entity": "Ceitrizine",
+   "alethia_prediction": "Cetirizine",
+   "alethia_score": 1.0000000000000002
+  },
+  {
+   "given_entity": "Ciproflxacin",
+   "alethia_prediction": "Ciprofloxacin",
+   "alethia_score": 0.9750168689498873
+  },
+  {
+   "given_entity": "Clinndamycin",
+   "alethia_prediction": "Clindamycin",
+   "alethia_score": 0.9824666109905364
+  },
+  {
+   "given_entity": "Clopidogrle",
+   "alethia_prediction": "Clopidogrel",
+   "alethia_score": 0.9999999999999998
+  },
+  {
+   "given_entity": "Dexamethaone",
+   "alethia_prediction": "Dexamethasone",
+   "alethia_score": 0.975900072948533
+  },
+  {
+   "given_entity": "Diaazepam",
+   "alethia_prediction": "Diazepam",
+   "alethia_score": 0.9797958971132712
+  },
+  {
+   "given_entity": "Diclofenca",
+   "alethia_prediction": "Diclofenac",
+   "alethia_score": 1.0000000000000002
+  },
+  {
+   "given_entity": "Doxyycline",
+   "alethia_prediction": "Doxycycline",
+   "alethia_score": 0.9689627902499088
+  },
+  {
+   "given_entity": "Enalaprril",
+   "alethia_prediction": "Enalapril",
+   "alethia_score": 0.9707253433941512
+  },
+  {
+   "given_entity": "Esomperazole",
+   "alethia_prediction": "Esomeprazole",
+   "alethia_score": 1.0000000000000002
+  },
+  {
+   "given_entity": "Floxetine",
+   "alethia_prediction": "Fluoxetine",
+   "alethia_score": 0.9574271077563381
+  },
+  {
+   "given_entity": "Fluticaasone",
+   "alethia_prediction": "Fluticasone",
+   "alethia_score": 0.9669875568304562
+  },
+  {
+   "given_entity": "Furoesmide",
+   "alethia_prediction": "Furosemide",
+   "alethia_score": 1.0000000000000002
+  },
+  {
+   "given_entity": "Gabpentin",
+   "alethia_prediction": "Gabapentin",
+   "alethia_score": 0.9669875568304563
+  },
+  {
+   "given_entity": "Glibennclamide",
+   "alethia_prediction": "Glibenclamide",
+   "alethia_score": 0.9782319760890368
+  },
+  {
+   "given_entity": "Gliclaizde",
+   "alethia_prediction": "Gliclazide",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Hepain",
+   "alethia_prediction": "Heparin",
+   "alethia_score": 0.9258200997725515
+  },
+  {
+   "given_entity": "Hyddrochlorothiazide",
+   "alethia_prediction": "Hydrochlorothiazide",
+   "alethia_score": 0.9893252643920899
+  },
+  {
+   "given_entity": "Hydrocrotisone",
+   "alethia_prediction": "Hydrocortisone",
+   "alethia_score": 0.9999999999999999
+  },
+  {
+   "given_entity": "Ibuproen",
+   "alethia_prediction": "Ibuprofen",
+   "alethia_score": 0.9428090415820634
+  },
+  {
+   "given_entity": "Insuulin",
+   "alethia_prediction": "Insulin",
+   "alethia_score": 0.9669875568304565
+  },
+  {
+   "given_entity": "Levetiraectam",
+   "alethia_prediction": "Levetiracetam",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Levotyroxine",
+   "alethia_prediction": "Levothyroxine",
+   "alethia_score": 0.9701425001453321
+  },
+  {
+   "given_entity": "Lorratadine",
+   "alethia_prediction": "Loratadine",
+   "alethia_score": 0.9689627902499088
+  },
+  {
+   "given_entity": "Loarzepam",
+   "alethia_prediction": "Lorazepam",
+   "alethia_score": 1.0000000000000002
+  },
+  {
+   "given_entity": "Losartn",
+   "alethia_prediction": "Losartan",
+   "alethia_score": 0.9561828874675148
+  },
+  {
+   "given_entity": "Metfoormin",
+   "alethia_prediction": "Metformin",
+   "alethia_score": 0.9669875568304563
+  },
+  {
+   "given_entity": "Meotclopramide",
+   "alethia_prediction": "Metoclopramide",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Metronidazle",
+   "alethia_prediction": "Metronidazole",
+   "alethia_score": 0.9723055853282465
+  },
+  {
+   "given_entity": "Montelukkast",
+   "alethia_prediction": "Montelukast",
+   "alethia_score": 0.9707253433941512
+  },
+  {
+   "given_entity": "Mrophine",
+   "alethia_prediction": "Morphine",
+   "alethia_score": 0.9999999999999999
+  },
+  {
+   "given_entity": "Naprxen",
+   "alethia_prediction": "Naproxen",
+   "alethia_score": 0.9486832980505138
+  },
+  {
+   "given_entity": "Omepraazole",
+   "alethia_prediction": "Omeprazole",
+   "alethia_score": 0.9723055853282466
+  },
+  {
+   "given_entity": "Ondanestron",
+   "alethia_prediction": "Ondansetron",
+   "alethia_score": 0.9999999999999996
+  },
+  {
+   "given_entity": "Pantprazole",
+   "alethia_prediction": "Pantoprazole",
+   "alethia_score": 0.9737289911202952
+  },
+  {
+   "given_entity": "Paracettamol",
+   "alethia_prediction": "Paracetamol",
+   "alethia_score": 0.9761870601839524
+  },
+  {
+   "given_entity": "Prednisoolne",
+   "alethia_prediction": "Prednisolone",
+   "alethia_score": 1.0000000000000002
+  },
+  {
+   "given_entity": "Rmipril",
+   "alethia_prediction": "Ramipril",
+   "alethia_score": 0.9574271077563382
+  },
+  {
+   "given_entity": "Raniitidine",
+   "alethia_prediction": "Ranitidine",
+   "alethia_score": 0.9899494936611667
+  },
+  {
+   "given_entity": "Rviaroxaban",
+   "alethia_prediction": "Rivaroxaban",
+   "alethia_score": 0.9999999999999994
+  },
+  {
+   "given_entity": "Rosuvastatn",
+   "alethia_prediction": "Rosuvastatin",
+   "alethia_score": 0.9718253158075503
+  },
+  {
+   "given_entity": "Salbutaamol",
+   "alethia_prediction": "Salbutamol",
+   "alethia_score": 0.9810229431759454
+  },
+  {
+   "given_entity": "Setrraline",
+   "alethia_prediction": "Sertraline",
+   "alethia_score": 0.9999999999999999
+  },
+  {
+   "given_entity": "Simvasatin",
+   "alethia_prediction": "Simvastatin",
+   "alethia_score": 0.9750168689498873
+  },
+  {
+   "given_entity": "Sitaglipttin",
+   "alethia_prediction": "Sitagliptin",
+   "alethia_score": 0.9834151021607785
+  },
+  {
+   "given_entity": "Spironloactone",
+   "alethia_prediction": "Spironolactone",
+   "alethia_score": 0.9999999999999998
+  },
+  {
+   "given_entity": "Telmisatan",
+   "alethia_prediction": "Telmisartan",
+   "alethia_score": 0.9660917830792959
+  },
+  {
+   "given_entity": "Theopphylline",
+   "alethia_prediction": "Theophylline",
+   "alethia_score": 0.9772545497599157
+  },
+  {
+   "given_entity": "Trmaadol",
+   "alethia_prediction": "Tramadol",
+   "alethia_score": 0.9999999999999999
+  },
+  {
+   "given_entity": "Trmethoprim",
+   "alethia_prediction": "Trimethoprim",
+   "alethia_score": 0.9761870601839527
+  },
+  {
+   "given_entity": "Warfaarin",
+   "alethia_prediction": "Warfarin",
+   "alethia_score": 0.9801960588196069
+  }
+ ]
+}

@@ -1,0 +1,7 @@
+^tools$
+^.*\.Rcheck$
+^.*\.tar\.gz$
+^\.github$
+^\.Rproj\.user$
+^.*\.Rproj$
+^cran-comments\.md$

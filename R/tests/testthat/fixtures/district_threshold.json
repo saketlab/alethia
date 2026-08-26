@@ -1,0 +1,364 @@
+{
+ "description": "string matching with an explicit threshold",
+ "queries": [
+  "Andaman and Nicobar",
+  "Andaman and Nicobar",
+  "Andaman and Nicobar",
+  "Srikakulam",
+  "Srikakulam",
+  "Vizagapatnam",
+  "Vizagapatnam",
+  "East Godavari",
+  "West Godavari",
+  "Krishna",
+  "Guntur",
+  "Guntur",
+  "Nellore",
+  "Nellore",
+  "Chittoor",
+  "Cuddapah",
+  "Anantapur",
+  "Kurnool",
+  "Kurnool",
+  "Mahbubnagar",
+  "Hyderabad",
+  "Hyderabad",
+  "Medak",
+  "Nizamabad",
+  "Adilabad",
+  "Karimnagar",
+  "Warangal",
+  "Warangal",
+  "Nalgonda",
+  "Balipara Frontier Tract",
+  "Balipara Frontier Tract",
+  "Balipara Frontier Tract",
+  "Balipara Frontier Tract",
+  "Balipara Frontier Tract",
+  "Balipara Frontier Tract",
+  "Abor Hills",
+  "Abor Hills",
+  "Abor Hills",
+  "Abor Hills",
+  "Mishmi Hills"
+ ],
+ "references": [
+  "Adilabad",
+  "Aizawl",
+  "Anantapur",
+  "Andaman",
+  "Andaman and Nicobar Islands",
+  "Araria",
+  "Aurangabad",
+  "Banka",
+  "Barpeta",
+  "Begusarai",
+  "Bhagalpur",
+  "Bhojpur",
+  "Bongaigaon",
+  "Buxar",
+  "Cachar",
+  "Champhai",
+  "Changlang",
+  "Chittoor",
+  "Cuddapah",
+  "Darbhanga",
+  "Darrang",
+  "Dhemaji",
+  "Dhuburi",
+  "Dibang Valley",
+  "Dibrugarh",
+  "Dumka",
+  "East Garo Hills",
+  "East Godavari",
+  "East Kameng",
+  "East Khasi Hills",
+  "East Siang",
+  "Gaya",
+  "Goalpara",
+  "Golaghat",
+  "Gopalganj",
+  "Guntur",
+  "Hailakandi",
+  "Hyderabad",
+  "Jaintia Hills",
+  "Jamui",
+  "Jehanabad",
+  "Jorhat",
+  "Kaimur (Bhabua)",
+  "Kamrup",
+  "Karbi Anglong",
+  "Karimganj",
+  "Karimnagar",
+  "Katihar",
+  "Khagaria",
+  "Khammam",
+  "Kishanganj",
+  "Kokrajhar",
+  "Kolasib",
+  "Krishna",
+  "Kurnool",
+  "Lakhimpur",
+  "Lakhisaral",
+  "Lawngtlai",
+  "Lohit",
+  "Lower Subansiri",
+  "Lunglei",
+  "Madhepura",
+  "Madhudani",
+  "Mahbubnagar",
+  "Mamit",
+  "Marigaon",
+  "Medak",
+  "Munger",
+  "Muzaffarpur",
+  "Nagaon",
+  "Nalanda",
+  "Nalbari",
+  "Nalgonda",
+  "Nawada",
+  "Nellore",
+  "Nicobar",
+  "Nizamabad",
+  "North Cachar Hills",
+  "Ongole",
+  "Papum Pare",
+  "Pashchim Champaran",
+  "Patna",
+  "Purba Champaran",
+  "Purnea",
+  "Rangareddi",
+  "Ri Bhoi",
+  "Rohtas",
+  "Saharsa",
+  "Saiha",
+  "Samastipur",
+  "Saran",
+  "Serchhip",
+  "Sheilkhpura",
+  "Sheohar",
+  "Sibsagar",
+  "Sitamarhi",
+  "Siwan",
+  "Sonitpur",
+  "South Garo Hills",
+  "Srikakulam",
+  "Supaul",
+  "Tawang",
+  "Tinsukia",
+  "Tirap",
+  "Upper Siang",
+  "Upper Subansiri",
+  "Visakhapatnam",
+  "Vizianagaram",
+  "Warangal",
+  "West Garo Hills",
+  "West Godavari",
+  "West Kameng",
+  "West Khasi Hills",
+  "West Siang"
+ ],
+ "threshold": 0.6,
+ "expected": [
+  {
+   "given_entity": "Andaman and Nicobar",
+   "alethia_prediction": "Andaman and Nicobar Islands",
+   "alethia_score": 0.826086956521739
+  },
+  {
+   "given_entity": "Andaman and Nicobar",
+   "alethia_prediction": "Andaman and Nicobar Islands",
+   "alethia_score": 0.826086956521739
+  },
+  {
+   "given_entity": "Andaman and Nicobar",
+   "alethia_prediction": "Andaman and Nicobar Islands",
+   "alethia_score": 0.826086956521739
+  },
+  {
+   "given_entity": "Srikakulam",
+   "alethia_prediction": "Srikakulam",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Srikakulam",
+   "alethia_prediction": "Srikakulam",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Vizagapatnam",
+   "alethia_prediction": "Visakhapatnam",
+   "alethia_score": 0.8
+  },
+  {
+   "given_entity": "Vizagapatnam",
+   "alethia_prediction": "Visakhapatnam",
+   "alethia_score": 0.8
+  },
+  {
+   "given_entity": "East Godavari",
+   "alethia_prediction": "East Godavari",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "West Godavari",
+   "alethia_prediction": "West Godavari",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Krishna",
+   "alethia_prediction": "Krishna",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Guntur",
+   "alethia_prediction": "Guntur",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Guntur",
+   "alethia_prediction": "Guntur",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Nellore",
+   "alethia_prediction": "Nellore",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Nellore",
+   "alethia_prediction": "Nellore",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Chittoor",
+   "alethia_prediction": "Chittoor",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Cuddapah",
+   "alethia_prediction": "Cuddapah",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Anantapur",
+   "alethia_prediction": "Anantapur",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Kurnool",
+   "alethia_prediction": "Kurnool",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Kurnool",
+   "alethia_prediction": "Kurnool",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Mahbubnagar",
+   "alethia_prediction": "Mahbubnagar",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Hyderabad",
+   "alethia_prediction": "Hyderabad",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Hyderabad",
+   "alethia_prediction": "Hyderabad",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Medak",
+   "alethia_prediction": "Medak",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Nizamabad",
+   "alethia_prediction": "Nizamabad",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Adilabad",
+   "alethia_prediction": "Adilabad",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Karimnagar",
+   "alethia_prediction": "Karimnagar",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Warangal",
+   "alethia_prediction": "Warangal",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Warangal",
+   "alethia_prediction": "Warangal",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Nalgonda",
+   "alethia_prediction": "Nalgonda",
+   "alethia_score": 1.0
+  },
+  {
+   "given_entity": "Balipara Frontier Tract",
+   "alethia_prediction": null,
+   "alethia_score": null
+  },
+  {
+   "given_entity": "Balipara Frontier Tract",
+   "alethia_prediction": null,
+   "alethia_score": null
+  },
+  {
+   "given_entity": "Balipara Frontier Tract",
+   "alethia_prediction": null,
+   "alethia_score": null
+  },
+  {
+   "given_entity": "Balipara Frontier Tract",
+   "alethia_prediction": null,
+   "alethia_score": null
+  },
+  {
+   "given_entity": "Balipara Frontier Tract",
+   "alethia_prediction": null,
+   "alethia_score": null
+  },
+  {
+   "given_entity": "Balipara Frontier Tract",
+   "alethia_prediction": null,
+   "alethia_score": null
+  },
+  {
+   "given_entity": "Abor Hills",
+   "alethia_prediction": null,
+   "alethia_score": null
+  },
+  {
+   "given_entity": "Abor Hills",
+   "alethia_prediction": null,
+   "alethia_score": null
+  },
+  {
+   "given_entity": "Abor Hills",
+   "alethia_prediction": null,
+   "alethia_score": null
+  },
+  {
+   "given_entity": "Abor Hills",
+   "alethia_prediction": null,
+   "alethia_score": null
+  },
+  {
+   "given_entity": "Mishmi Hills",
+   "alethia_prediction": "Jaintia Hills",
+   "alethia_score": 0.64
+  }
+ ]
+}
