@@ -12,6 +12,13 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 library(alethiaR)
 ```
 
+## Install
+
+```r
+# install.packages("remotes")
+remotes::install_github("saketlab/alethia", subdir = "R")
+```
+
 ## Match against a reference list
 
 The default matches on spelling and needs no model.
