@@ -499,8 +499,8 @@ function Header({ appearance }) {
         </Flex>
       </Flex>
       <Text size="3" color="gray" style={{ maxWidth: '58ch' }}>
-        Clean up a messy list of names, and find which embedding model suits your
-        data, measured on your own entries rather than a leaderboard.
+        Clean up a messy list of names. Automatically infer most appropriate model
+        for your data.
       </Text>
     </Flex>
   );
