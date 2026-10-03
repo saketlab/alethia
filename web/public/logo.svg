@@ -1,0 +1,320 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 118 123"
+   version="1.1"
+   id="svg277"
+   sodipodi:docname="logo.svg"
+   width="118"
+   height="123"
+   inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs281" />
+  <sodipodi:namedview
+     id="namedview279"
+     pagecolor="#ffffff"
+     bordercolor="#111111"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="1"
+     inkscape:deskcolor="#d1d1d1"
+     showgrid="false"
+     inkscape:zoom="1.3316667"
+     inkscape:cx="185.85732"
+     inkscape:cy="185.10638"
+     inkscape:window-width="1920"
+     inkscape:window-height="982"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg277" />
+  <!-- Background -->
+  <!-- Book-shaped document with text correction elements -->
+  <g
+     transform="translate(76.5,61.5)"
+     id="g224">
+    <!-- Book body with spine -->
+    <path
+       d="m -65,-60 h 95 c 5,0 10,5 10,10 V 50 c 0,5 -5,10 -10,10 h -95 c -5,0 -10,-5 -10,-10 V -50 c 0,-5 5,-10 10,-10 z"
+       fill="#e8d0a9"
+       stroke="#342412"
+       stroke-width="3"
+       id="path164" />
+    <!-- Book spine -->
+    <path
+       d="m -65,-60 c -5,0 -10,5 -10,10 V 50 c 0,5 5,10 10,10"
+       fill="#d1b78e"
+       stroke="#342412"
+       stroke-width="3"
+       id="path166" />
+    <!-- Book binding details -->
+    <path
+       d="M -65,-60 V 60"
+       stroke="#342412"
+       stroke-width="4"
+       id="path168" />
+    <path
+       d="M -70,-45 V 45"
+       stroke="#a67c52"
+       stroke-width="1.5"
+       id="path170" />
+    <path
+       d="M -72,-40 V 40"
+       stroke="#a67c52"
+       stroke-width="1"
+       id="path172" />
+    <!-- Book cover texture -->
+    <path
+       d="m -60,-55 h 85 m -85,2 h 85"
+       stroke="#a67c52"
+       stroke-width="0.5"
+       opacity="0.3"
+       id="path174" />
+    <path
+       d="M -60,55 H 25 M -60,53 H 25"
+       stroke="#a67c52"
+       stroke-width="0.5"
+       opacity="0.3"
+       id="path176" />
+    <!-- Book pages visual effect at the edges -->
+    <path
+       d="m 30,-60 c 5,0 10,5 10,10 V 50 c 0,5 -5,10 -10,10"
+       fill="#f8f5f0"
+       stroke="#342412"
+       stroke-width="1"
+       id="path178" />
+    <path
+       d="M 35,-50 V 50"
+       stroke="#d1b78e"
+       stroke-width="1.5"
+       opacity="0.5"
+       id="path180" />
+    <path
+       d="M 37,-45 V 45"
+       stroke="#d1b78e"
+       stroke-width="1"
+       opacity="0.4"
+       id="path182" />
+    <!-- Left side (page) with incorrect text -->
+    <g
+       transform="translate(-45.158303)"
+       id="g196">
+      <!-- "Incorrect" wavy text lines -->
+      <path
+         d="m -5,-40 c 5,3 10,-3 15,0 5,3 5,3 10,0"
+         stroke="#a67c52"
+         stroke-width="3"
+         stroke-linecap="round"
+         id="path184" />
+      <path
+         d="m -5,-25 c 5,3 10,-3 15,0 5,3 5,3 10,0"
+         stroke="#a67c52"
+         stroke-width="3"
+         stroke-linecap="round"
+         id="path186" />
+      <path
+         d="m -5,-10 c 3,3 5,-3 8,0 3,3 2,3 5,0"
+         stroke="#a67c52"
+         stroke-width="3"
+         stroke-linecap="round"
+         id="path188" />
+      <!-- Error indicators -->
+      <path
+         d="m -8,-40 -4,4 m 4,-4 4,4"
+         stroke="#b85450"
+         stroke-width="1.5"
+         stroke-linecap="round"
+         id="path190" />
+      <path
+         d="m -8,-25 -4,4 m 4,-4 4,4"
+         stroke="#b85450"
+         stroke-width="1.5"
+         stroke-linecap="round"
+         id="path192" />
+      <path
+         d="m -8,-10 -4,4 m 4,-4 4,4"
+         stroke="#b85450"
+         stroke-width="1.5"
+         stroke-linecap="round"
+         id="path194" />
+    </g>
+    <!-- Right side (page) with corrected text -->
+    <g
+       transform="translate(0.15713001,-0.22293492)"
+       id="g214">
+      <!-- "Corrected" straight text lines -->
+      <path
+         d="M -5,-40 H 20"
+         stroke="#342412"
+         stroke-width="3"
+         stroke-linecap="round"
+         id="path198" />
+      <path
+         d="M -5,-25 H 20"
+         stroke="#342412"
+         stroke-width="3"
+         stroke-linecap="round"
+         id="path200" />
+      <path
+         d="M -5,-10 H 10"
+         stroke="#342412"
+         stroke-width="3"
+         stroke-linecap="round"
+         id="path202" />
+      <!-- Checkmarks indicating corrections -->
+      <path
+         d="m 25,-40 3,3 5,-5"
+         stroke="#4d8c57"
+         stroke-width="1.5"
+         stroke-linecap="round"
+         id="path204"
+         style="fill:none" />
+      <path
+         d="m 25,-25 3,3 5,-5"
+         stroke="#4d8c57"
+         stroke-width="1.5"
+         stroke-linecap="round"
+         id="path206"
+         style="fill:none" />
+      <path
+         d="m 15,-10 3,3 5,-5"
+         stroke="#4d8c57"
+         stroke-width="1.5"
+         stroke-linecap="round"
+         id="path208"
+         style="fill:none" />
+      <!-- Additional correct text lines -->
+    </g>
+    <!-- Dividing line between pages (book centerfold) -->
+    <path
+       d="M -10,-55 V 55"
+       stroke="#d1b78e"
+       stroke-width="3"
+       opacity="0.7"
+       id="path216" />
+    <path
+       d="M -10,-55 V 55"
+       stroke="#342412"
+       stroke-width="0.5"
+       opacity="0.5"
+       id="path218" />
+    <!-- Page shadow effect -->
+  </g>
+  <!-- Enhanced embeddings visualization in central area -->
+  <g
+     transform="translate(58.709732,66.14637)"
+     id="g271">
+    <!-- Embedding space background -->
+    <!-- Vector embedding visualization -->
+    <!-- Cluster 1: "Incorrect" word embeddings (more scattered) -->
+    <g
+       transform="translate(5.0780761,33.548039)"
+       id="g240">
+      <circle
+         cx="-12"
+         cy="-8"
+         r="2"
+         fill="#b85450"
+         id="circle228" />
+      <circle
+         cx="-7"
+         cy="-15"
+         r="2"
+         fill="#b85450"
+         id="circle230" />
+      <circle
+         cx="-15"
+         cy="-20"
+         r="2"
+         fill="#b85450"
+         id="circle232" />
+      <circle
+         cx="-5"
+         cy="-5"
+         r="2"
+         fill="#b85450"
+         id="circle234" />
+      <!-- Vector connections -->
+      <path
+         d="m -12,-8 5,-7 m 0,0 -8,-5 m 0,0 10,15 m 0,0 -7,-3"
+         stroke="#b85450"
+         stroke-width="0.8"
+         opacity="0.6"
+         id="path236" />
+      <!-- Word labels -->
+    </g>
+    <!-- Embedding transformation arrows -->
+    <path
+       d="M -4.2531796,14.334481 -11.89424,-3.0066288"
+       stroke="#342412"
+       stroke-width="0.837365"
+       fill="none"
+       marker-end="url(#arrowhead)"
+       stroke-dasharray="2, 1"
+       id="path242"
+       sodipodi:nodetypes="cc"
+       style="fill:#b85450;fill-opacity:1;stroke:#b85450;stroke-opacity:1" />
+    <path
+       d="M -4.8458062,14.162481 C -2.3150601,13.085226 0.54562468,11.99353 3.7224145,10.703395 6.1293122,9.7259222 8.717666,8.6345402 11.481458,7.3492222"
+       stroke="#342412"
+       stroke-width="1"
+       fill="none"
+       marker-end="url(#arrowhead)"
+       stroke-dasharray="2, 1"
+       id="path244"
+       sodipodi:nodetypes="csc"
+       style="stroke:#4d8c57;stroke-opacity:1" />
+    <!-- Arrow marker definition -->
+    <defs
+       id="defs249">
+      <marker
+         id="arrowhead"
+         markerWidth="10"
+         markerHeight="7"
+         refX="9"
+         refY="3.5"
+         orient="auto">
+        <polygon
+           points="10,3.5 0,7 0,0 "
+           fill="#342412"
+           id="polygon246" />
+      </marker>
+    </defs>
+    <!-- Cluster 2: "Correct" word embeddings (tightly grouped) -->
+    <!-- Cosine similarity arc -->
+    <path
+       d="M -10,-10 A 14.142136,14.142136 0 0 1 10,10"
+       stroke="#342412"
+       stroke-width="1"
+       fill="none"
+       opacity="0.5"
+       stroke-dasharray="1, 1"
+       id="path265" />
+    <!-- Coordinate axes (subtle) -->
+    <path
+       d="m -34.768574,15.897924 h 60 m -29.9999995,-30 v 60"
+       stroke="#a67c52"
+       stroke-width="0.5"
+       opacity="0.3"
+       id="path267" />
+    <!-- Mathematical symbols - dot product, vector notation -->
+  </g>
+  <!-- Alethia text -->
+  <text
+     x="62.677746"
+     y="117.65252"
+     font-family="Arial, sans-serif"
+     font-size="36px"
+     font-weight="bold"
+     fill="#0d1821"
+     text-anchor="middle"
+     id="text273"
+     style="font-size:32px"><tspan
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:32px;font-family:'Latin Modern Mono Prop Light';-inkscape-font-specification:'Latin Modern Mono Prop Light,  Bold'"
+       id="tspan1330">alethia</tspan></text>
+  <!-- Tagline highlighting LLM text correction -->
+</svg>

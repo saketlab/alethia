@@ -1,4 +1,4 @@
-# alethiaR
+# alethiaR <img src="man/figures/logo.png" align="right" height="120" alt="" />
 
 R implementation of [alethia](https://github.com/saketlab/alethia) for entity
 matching, and label-free embedding-model assessment.

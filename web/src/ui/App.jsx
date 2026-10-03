@@ -452,6 +452,7 @@ function Header({ appearance }) {
     <Flex direction="column" gap="2">
       <Flex align="center" gap="3" justify="between" wrap="wrap">
         <Flex align="center" gap="3">
+          <img src="/logo.svg" alt="" width="32" height="33" />
           <Heading as="h1" size="7" weight="bold" trim="start">alethia</Heading>
           <Badge color="gray" variant="soft" radius="full">runs in your browser</Badge>
         </Flex>
