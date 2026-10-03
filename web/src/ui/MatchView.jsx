@@ -1,7 +1,7 @@
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Badge, Box, Button, Callout, Card, Flex, Heading, IconButton, Select, Table, Text,
-  TextField, Tooltip,
+  Badge, Box, Button, Callout, Card, Flex, Heading, IconButton, Popover, Select, Switch,
+  Table, Text, TextField, Tooltip,
 } from '@radix-ui/themes';
 import {
   ArrowDownIcon, ArrowUpIcon, CaretSortIcon, CheckIcon, DownloadIcon, InfoCircledIcon,
@@ -26,6 +26,9 @@ export default function MatchView({
   const [result, setResult] = useState(null);
   // matches DEFAULT_THRESHOLD in the Python and R packages; blank means best guess
   const [threshold, setThreshold] = useState(String(DEFAULT_THRESHOLD));
+  // off by default: splitting changes what gets embedded
+  const [splitEnabled, setSplitEnabled] = useState(false);
+  const [splitSeparator, setSplitSeparator] = useState(',');
   const [copied, setCopied] = useState(false);
   const copyTimer = useRef(null);
 
@@ -53,9 +56,10 @@ export default function MatchView({
     const typed = threshold === '' ? null : Number(threshold);
     const used = Number.isFinite(typed) ? typed : null;
     // the worker echoes the cutoff it ran with, so the table cannot mislabel it
+    const splitOn = splitEnabled && splitSeparator ? splitSeparator : undefined;
     const payload = await runJob({
       type: 'match',
-      payload: { queries, references, model: selected, threshold: used },
+      payload: { queries, references, model: selected, threshold: used, splitOn },
     }).catch(() => null);
     if (payload) setResult(payload);
   };
@@ -142,6 +146,33 @@ export default function MatchView({
                 </Button>
               </Flex>
             </Box>
+
+            <Box style={{ flex: '0 1 260px', minWidth: 0 }}>
+              <Text as="label" htmlFor="split-toggle" size="2" weight="medium" mb="2"
+                style={{ display: 'block' }}>
+                Split composite entries
+              </Text>
+              <Flex align="center" gap="2">
+                <Switch
+                  id="split-toggle"
+                  aria-describedby="split-help"
+                  checked={splitEnabled}
+                  onCheckedChange={setSplitEnabled}
+                />
+                <TextField.Root
+                  aria-label="Separator to split entries on"
+                  disabled={!splitEnabled}
+                  placeholder=","
+                  value={splitSeparator}
+                  onChange={(e) => setSplitSeparator(e.target.value)}
+                  style={{ width: '6rem' }}
+                />
+              </Flex>
+              <Text as="div" id="split-help" size="1" color="gray" mt="2">
+                Splits each entry on this text, matches every piece on its own, and
+                keeps whichever piece scored best.
+              </Text>
+            </Box>
           </Flex>
 
           {/* The field boxes differ in height, so a third inline column needs a top offset
@@ -193,7 +224,7 @@ const PREVIEW_ROWS = 200;
  * on every progress tick.
  */
 function MatchResultsView({ result }) {
-  const { matches, model, threshold } = result;
+  const { matches, model, threshold, splitOn } = result;
 
   // null is the review order, corrected first, which is not any column's sort
   const [sort, setSort] = useState(null);
@@ -263,6 +294,7 @@ function MatchResultsView({ result }) {
               <SortableHeader
                 label="Score" sortKey="score" sort={sort} onSort={toggleSort} align="right"
               />
+              {splitOn && <Table.ColumnHeaderCell>Matched on</Table.ColumnHeaderCell>}
             </Table.Row>
           </Table.Header>
           <Table.Body>
@@ -286,6 +318,11 @@ function MatchResultsView({ result }) {
                     </Badge>
                   )}
                 </Table.Cell>
+                {splitOn && (
+                  <Table.Cell style={{ wordBreak: 'break-word' }}>
+                    <SplitProvenance match={m} />
+                  </Table.Cell>
+                )}
               </Table.Row>
             ))}
           </Table.Body>
@@ -333,6 +370,37 @@ function MatchResultsView({ result }) {
 }
 
 const MatchResults = memo(MatchResultsView);
+
+function SplitProvenance({ match }) {
+  const parts = match.alethia_parts ?? [];
+  if (parts.length <= 1) {
+    return <Text color="gray" size="1">whole entry</Text>;
+  }
+  return (
+    <Popover.Root>
+      <Popover.Trigger>
+        <Button variant="ghost" size="1" className="inline-action">
+          "{match.alethia_matched_part}" ({parts.length} pieces)
+        </Button>
+      </Popover.Trigger>
+      <Popover.Content size="1" maxWidth="320px">
+        <Flex direction="column" gap="2">
+          <Text size="1" weight="medium">Every piece tried, best first</Text>
+          {parts.map((p, i) => (
+            <Flex key={`${p.part}-${i}`} justify="between" gap="2" align="baseline">
+              <Text size="1" style={{ wordBreak: 'break-word' }}>
+                {p.part} {p.prediction ? `→ ${p.prediction}` : '(no match)'}
+              </Text>
+              <Text size="1" color="gray" className="tabular">
+                {p.score === null ? '-' : p.score.toFixed(3)}
+              </Text>
+            </Flex>
+          ))}
+        </Flex>
+      </Popover.Content>
+    </Popover.Root>
+  );
+}
 
 /**
  * A column header that sorts, and says so.

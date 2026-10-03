@@ -16,6 +16,7 @@ __version__ = "0.1.0"
 # __all__ is derived from this
 _EXPORTS: dict[str, str] = {
     "alethia": ".alethia",
+    "alethia_split": ".split",
     "load_sentence_transformer_model": ".alethia",
     "get_best_available_backend": ".alethia",
     "get_available_models": ".alethia",

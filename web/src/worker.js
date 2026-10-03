@@ -2,7 +2,9 @@
 
 import { pipeline, env } from '@huggingface/transformers';
 
-import { clusterEntities, fromRows, matchByEmbeddings } from './core.js';
+import {
+  clusterEntities, fromRows, matchByEmbeddings, regroupSplitMatches, splitAndDedupe,
+} from './core.js';
 import {
   centeredSeparability,
   hubness,
@@ -155,9 +157,24 @@ self.onmessage = async (event) => {
     }
 
     if (type === 'match') {
-      const { queries, references, model, threshold } = payload;
+      const { queries, references, model, threshold, splitOn } = payload;
       // carry the cutoff back, so the table cannot mislabel it
       const cutoff = Number.isFinite(threshold) ? threshold : null;
+
+      if (splitOn) {
+        const { partsPerQuery, uniqueParts, codes } = splitAndDedupe(queries, splitOn);
+        const { references: refEmb, parts: partEmb } = await prepare(
+          model, { references, parts: uniqueParts },
+        );
+        const uniqueMatches = matchByEmbeddings(uniqueParts, references, partEmb, refEmb, cutoff);
+        const matches = regroupSplitMatches(queries, partsPerQuery, codes, uniqueMatches);
+
+        post('result', {
+          kind: 'match', model: model.label, threshold: cutoff, splitOn, matches,
+        });
+        return;
+      }
+
       const { references: refEmb, queries: queryEmb } = await prepare(
         model, { references, queries },
       );

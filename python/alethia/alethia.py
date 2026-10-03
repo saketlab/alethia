@@ -564,6 +564,8 @@ def alethia(
             model, or an ``embed_fn``.
         threshold: Minimum accepted score. ``None`` gives models 0.7 and rapidfuzz its
             best guess, unscored.
+        drop_duplicates: Collapse identical result rows. ``False`` keeps one row per
+            input, for joining back onto a table by position.
 
     Returns:
         A frame of ``given_entity``, ``alethia_prediction``, ``alethia_score`` in input

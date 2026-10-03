@@ -129,6 +129,69 @@ export function matchByEmbeddings(queries, references, queryEmb, refEmb, thresho
   return out;
 }
 
+/** Mirrors alethia_split() in Python/R. */
+export function splitEntry(entry, splitOn) {
+  const parts = entry.split(splitOn).map((p) => p.trim()).filter(Boolean);
+  return parts.length ? parts : [entry];
+}
+
+/** matches: matchByEmbeddings rows for one entry's pieces. Tie-break via topK. */
+export function bestOfParts(matches) {
+  // null becomes -Infinity; topK's rankKey only handles finite scores
+  const scores = matches.map((m) => (m.alethia_score === null ? -Infinity : m.alethia_score));
+  const candidates = topK(scores, scores.length).map((i) => ({
+    part: matches[i].given_entity,
+    prediction: matches[i].alethia_prediction,
+    score: matches[i].alethia_score,
+  }));
+  const [best] = candidates;
+  return {
+    matchedPart: best.part,
+    prediction: best.prediction,
+    score: best.score,
+    parts: candidates,
+  };
+}
+
+/** codes[i] is uniqueParts' index for the ith flattened piece. */
+export function splitAndDedupe(queries, splitOn) {
+  const partsPerQuery = queries.map((q) => splitEntry(q, splitOn));
+  const flatParts = partsPerQuery.flat();
+
+  const indexOf = new Map();
+  const uniqueParts = [];
+  const codes = flatParts.map((part) => {
+    let code = indexOf.get(part);
+    if (code === undefined) {
+      code = uniqueParts.length;
+      indexOf.set(part, code);
+      uniqueParts.push(part);
+    }
+    return code;
+  });
+
+  return { partsPerQuery, uniqueParts, codes };
+}
+
+/** uniqueMatches: matchByEmbeddings output for splitAndDedupe's uniqueParts. */
+export function regroupSplitMatches(queries, partsPerQuery, codes, uniqueMatches) {
+  let cursor = 0;
+  return queries.map((query, i) => {
+    const partCount = partsPerQuery[i].length;
+    const rows = codes.slice(cursor, cursor + partCount).map((c) => uniqueMatches[c]);
+    cursor += partCount;
+
+    const best = bestOfParts(rows);
+    return {
+      given_entity: query,
+      alethia_prediction: best.prediction,
+      alethia_score: best.score,
+      alethia_matched_part: best.matchedPart,
+      alethia_parts: best.parts,
+    };
+  });
+}
+
 /**
  * Merge edges between entities that are mutual nearest neighbours.
  *
